@@ -295,7 +295,9 @@
     function renderTakeaways() {
       const box = document.getElementById('takeaway-list');
       box.replaceChildren();
-      const selected = metrics.filter(item => item.sector === selectedSector && item.change !== null && item.change !== undefined);
+      const priority=selectedSector==='gas'?['gas_fr','gas_eu','lng_fr_sendout']:selectedSector==='agri'?['ag_world_wheat','ag_corn_stocks','ag_soy_stocks']:[];
+      const selected=metrics.filter(item=>item.sector===selectedSector&&Number.isFinite(item.change))
+        .sort((a,b)=>(priority.includes(a.id)?priority.indexOf(a.id):999)-(priority.includes(b.id)?priority.indexOf(b.id):999));
       for (const item of selected.slice(0, 3)) {
         const note = line('', 'div', 'story');
         note.append(line(item.label + ' : ' + changeText(item) + '.', 'div'));
@@ -444,7 +446,7 @@
       const isCurrent = reference && Number(reference.date.slice(0,4))===year;
       if(reference){const valueBox=line('','div','seasonal-current');
         valueBox.append(line(number(reference.value,2)+' '+config.unit,'strong'),
-          line(config.referenceLabel || 'Dernière observation · '+period(reference.date),'small'));
+          line(config.referenceLabel || (config.monthly?'Dernière moyenne · '+period(reference.date.slice(0,7)):'Dernière observation · '+period(reference.date)),'small'));
         heading.append(valueBox);}
       host.append(line(config.subtitle || 'Mêmes mois de l’année · une échelle commune pour les quatre courbes.','p','seasonal-subtitle'));
       const active = seasonalChoices.get(config.id) || new Set(years);
@@ -550,7 +552,7 @@
           note:'GIE AGSI+ · observations quotidiennes. Un niveau plus bas au même moment signifie un coussin de gaz moins rempli ; les capacités peuvent évoluer entre les années.',
           sourceLabel:'GIE AGSI+ · France',sourceUrl:'https://agsi.gie.eu/'});
         const spot=byId.price_ttf;
-        renderSeasonalChart(ttf,{id:'ttf-years',title:'TTF · trois années de recul et le niveau du jour',
+        renderSeasonalChart(ttf,{id:'ttf-years',title:spot?'TTF · historique mensuel et indice spot du jour':'TTF · niveaux mensuels sur quatre années',
           points:snapshot.history?.ttf_monthly,unit:'€/MWh',monthly:true,maxGap:45,
           reference:spot?{date:spot.as_of,value:spot.value}:null,
           referenceLabel:spot?'NGP spot '+(spot.quality||'daté')+' · '+parisTime(spot.observed_at||spot.as_of):null,
@@ -683,6 +685,18 @@
       }
     }
 
+    function renderMeasureGuide() {
+      document.getElementById('sector-news').hidden=!['oil','gas'].includes(selectedSector);
+      const details=document.getElementById('measure-reading'),paragraph=details.querySelector('p');
+      const guides={
+        oil:'Stocks en M bbl : millions de barils. Flux en M bbl/j : millions de barils par jour. Le WPSR mesure les États-Unis ; la production norvégienne éclaire la mer du Nord. Le spot EIA est un prix physique quotidien publié avec retard.',
+        gas:'AGSI+ mesure le gaz stocké (% ou TWh), ALSI le GNL en cuves et l’émission vers le réseau (GWh/j). Un stock et un débit décrivent deux choses différentes. Soutirage net positif = stock qui se réduit. Comparer les mêmes saisons.',
+        agri:'WASDE : prévisions de bilan, révisables chaque mois. M bu = millions de boisseaux, Mt = millions de tonnes. Crop Progress : enquête d’état et d’avancement ; conditions vs N−1, récolte vs moyenne cinq ans. Les liens météo restent des sources à consulter.',
+        metals:'USGS : tonnages annuels estimés. Un chiffre de production ne mesure pas le métal disponible immédiatement. Inventaires LME, coûts électriques et demande industrielle doivent être vérifiés séparément.'
+      };
+      paragraph.textContent=guides[selectedSector];
+    }
+
     function renderSector() {
       document.getElementById('sector-heading').textContent = sectors[selectedSector];
       const box = document.getElementById('metrics');
@@ -710,7 +724,7 @@
       document.querySelectorAll('.filters button').forEach(button => button.classList.toggle('active', button.dataset.sector === selectedSector));
       renderTakeaways();
       renderSignals();
-      renderTrend();renderSectorVisuals();
+      renderTrend();renderSectorVisuals();renderMeasureGuide();
       const context = document.getElementById('sector-context');
       const notes = {
         oil: 'Stocks US : variation hebdomadaire, pertinente surtout pour le WTI. Production norvégienne : repère européen mensuel, pétrole et liquides confondus. Le Brent en séance figure dans Marchés ; le spot EIA ci-dessous est daté.',

@@ -30,7 +30,7 @@ python scripts/build_dashboard.py
 
 Pour modifier la présentation, éditer `app/`, puis reconstruire `index.html`. Ne pas coller ce README dans Bloc-notes : **le code ouvrable est `index.html`**. Le workflow reconstruit également le fichier à chaque modification des sources.
 
-Les captures et contrôles desktop/mobile se trouvent dans les artefacts de [Vérifier l’interface du cockpit](../../actions/workflows/validate-ui.yml). Les tests navigateur utilisent les vraies données embarquées et le mode hors connexion ; ils vérifient navigation, tableaux, graphiques annuels, export et absence de débordement.
+Les captures et contrôles desktop/mobile se trouvent dans les artefacts de [Vérifier l’interface du cockpit](https://github.com/TheoTaillandier/Test2/actions/workflows/validate-ui.yml). Les tests navigateur utilisent les vraies données embarquées et le mode hors connexion ; ils vérifient navigation, tableaux, graphiques annuels, export et absence de débordement.
 
 ## Collecte et accès
 

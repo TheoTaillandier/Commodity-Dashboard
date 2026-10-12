@@ -27,3 +27,9 @@ Date/heure Europe/Paris ; commit de départ ; constats nouveaux ; décision ; fi
 - Structure : app/template.html, app/styles.css, app/cockpit.js → compilateur Python → HTML autonome. README séparé du code complet pour empêcher la copie de documentation dans le HTML.
 - Sources : correctif des pages Crop Progress ; pagination GIE complète ; NGP EEX sous condition de droits explicites après vérification des conditions officielles.
 - Vérifications locales : tests Python et syntaxe JS passent. Vérification du rendu Chromium et des collectes à confirmer dans les workflows avant publication finale.
+
+### Vérification du rendu et calculs — 12 octobre, après-midi Paris
+- Workflow 38261746988 puis 38262786808 : succès. Captures inspectées pour Marchés, Physique pétrole/gaz/agri et Power desktop/mobile. 18 combinaisons de page/largeur contrôlées (1440/390/320 px), sans débordement ni exception de panneau.
+- 28 tests Python passent ; tests Node des moyennes Power : journées Paris de 23/25 h, quarts d’heure manquants et doublons. Journées incomplètes exclues des moyennes et affichage des repères disponibles aujourd’hui.
+- Le TTF sans flux NGP est nommé moyenne mensuelle dans le titre et la date. Contexte EIA limité aux pages pétrole/gaz ; les mesures et définitions des autres secteurs restent pertinentes à leur marché.
+- Prochaine étape de cette intervention : publication main, reconstruction effective du HTML et vérification des collectes avec les secrets déjà configurés. Ces étapes ne sont pas encore attestées par cette entrée.

@@ -1,16 +1,16 @@
 /* Price calculations share one definition across cards and the market overview. */
 (function () {
   'use strict';
+  const dayFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'});
+  const offsetFormatter=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',timeZoneName:'shortOffset'});
   const parisDay = at => {
-    const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',
-      year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(at))
+    const parts=Object.fromEntries(dayFormatter.formatToParts(new Date(at))
       .filter(p=>['year','month','day'].includes(p.type)).map(p=>[p.type,p.value]));
     return parts.year+'-'+parts.month+'-'+parts.day;
   };
   function midnight(day) {
     const utc=Date.parse(day+'T00:00:00Z');
-    const offset=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Paris',timeZoneName:'shortOffset'})
-      .formatToParts(new Date(utc)).find(p=>p.type==='timeZoneName').value;
+    const offset=offsetFormatter.formatToParts(new Date(utc)).find(p=>p.type==='timeZoneName').value;
     const hours=Number(offset.match(/GMT([+-]\d+)/)?.[1]||0);
     return utc-hours*3600000;
   }
