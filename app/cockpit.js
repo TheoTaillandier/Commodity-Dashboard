@@ -79,24 +79,29 @@
       });
     });
 
+    document.querySelectorAll('.nav button').forEach((button,index)=>button.addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();
+      const tabs=[...document.querySelectorAll('.nav button')],next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].focus();tabs[next].click();
+    }));
+
     function renderStatus() {
       const container = document.getElementById('source-status');
       const labels = {brent: 'Brent spot', wti: 'WTI spot', henry: 'Henry Hub spot', ttf_ngp:'TTF spot',
         norway: 'Production Norvège',
-        oil: 'EIA stocks pétrole', oil_flows: 'EIA flux pétrole', gas: 'EIA gaz US', wasde: 'USDA WASDE',
+        oil: 'EIA stocks pétrole', oil_flows: 'EIA flux pétrole', gas: 'EIA gaz US', wasde: 'USDA WASDE', crop_progress:'État & récoltes US',
         news: 'Analyses EIA', gie: 'GIE stockage UE', gie_fr: 'GIE stockage France',
         alsi: 'GIE GNL UE', alsi_fr: 'GIE GNL France', metals: 'USGS métaux'};
       for (const [id, label] of Object.entries(labels)) {
         const source = snapshot.sources?.[id] || {};
         const sample = {brent:'price_brent',wti:'price_wti',henry:'price_henry',ttf_ngp:'price_ttf',
           norway:'oil_norway_liquids',
-          oil:'oil_crude',oil_flows:'oil_imports',gas:'gas_us',wasde:'ag_corn_stocks',
+          oil:'oil_crude',oil_flows:'oil_imports',gas:'gas_us',wasde:'ag_corn_stocks',crop_progress:'ag_corn_harvest',
           gie:'gas_eu',gie_fr:'gas_fr',alsi:'lng_eu_inventory',
           alsi_fr:'lng_fr_inventory',metals:'metal_copper'}[id];
         const hasValue = Boolean(sample && byId[sample]) || (id === 'news' && (snapshot.stories || []).length > 0);
         const status = source.status === 'ok' ? period(source.as_of || '') +
           (byId[sample] && stale(byId[sample]) ? ' · archive' : '') :
-          source.status === 'needs_key' ? 'clé requise' :
+          source.status === 'needs_key' ? 'clé requise' : source.status === 'needs_licence' ? 'flux sous licence non connecté' :
           source.status === 'structural' ? 'repère annuel' :
           source.status === 'manual' ? 'repère mensuel daté' :
           hasValue ? 'dernière valeur conservée' : 'source indisponible';
@@ -550,7 +555,7 @@
           reference:spot?{date:spot.as_of,value:spot.value}:null,
           referenceLabel:spot?'NGP spot '+(spot.quality||'daté')+' · '+parisTime(spot.observed_at||spot.as_of):null,
           subtitle:spot?'Courbes : moyennes mensuelles TTF · repère blanc : indice spot NGP EEX.':'Courbes : moyennes mensuelles TTF · chaque année sur une même échelle. Spot en séance non connecté.',
-          note:'Historique Banque mondiale converti en €/MWh avec le change mensuel BCE. La ligne blanche compare le niveau spot du jour aux moyennes passées ; il ne s’agit pas de clôtures quotidiennes historiques. Case 2026 : spot du jour ; cases précédentes : moyennes du même mois.',
+          note:'Historique Banque mondiale converti en €/MWh avec le change mensuel BCE. Chaque point est une moyenne mensuelle, aucune clôture quotidienne n’est déduite.'+(spot?' Le repère blanc et la case de l’année courante montrent le NGP autorisé du jour ; les autres cases montrent les moyennes du même mois.':' Le dernier mois publié sert de repère ; les cases comparent le même mois des quatre années.'),
           sourceLabel:'Banque mondiale · Pink Sheet / BCE',sourceUrl:'https://www.worldbank.org/en/research/commodity-markets'});
       }
     }
@@ -847,10 +852,10 @@
       const tomorrow=day(Date.parse(day(now)+'T12:00:00Z')+86400000);
       const points=fr.slice(-300).filter(p=>day(p.at)===tomorrow&&Number.isFinite(p.value));
       const step=fr.length>1 ? Math.max(15,Math.min(60,Math.round((Date.parse(fr[1].at)-Date.parse(fr[0].at))/60000))) : 60;
-      const complete=points.length>=Math.floor(24*60/step*.8);
+      const daily=window.CockpitPowerMetrics.summarize(points),complete=!!daily;
       document.getElementById('market-power-now').textContent=active?number(active.value,2)+' €':'—';
       document.getElementById('market-power-tomorrow').textContent=complete?
-        number(points.reduce((sum,p)=>sum+p.value,0)/points.length,2)+' €':'Après l’enchère';
+        number(daily.mean,2)+' €':'Après l’enchère';
       const verified=powerPrices.live_checked_at||powerPrices.generated_at;
       document.getElementById('market-power-note').textContent=verified ?
         'Prix fixés la veille · source '+(powerPrices.live_checked_at?'vérifiée ':'archivée ')+
@@ -917,10 +922,11 @@
       const delivery = fr.filter(p => localDay(p.at)===tomorrow);
       const todayDelivery = fr.filter(p => localDay(p.at)===today);
       const interval = fr.length>1 ? Math.max(15,Math.min(60,Math.round((Date.parse(fr[1].at)-Date.parse(fr[0].at))/60000))) : 60;
-      const complete = items => items.length >= Math.floor(24*60/interval*.8);
+      const summary=items=>window.CockpitPowerMetrics.summarize(items);
+      const complete=items=>summary(items)!==null;
       const todayAverage = complete(todayDelivery) ?
-        todayDelivery.reduce((sum,p)=>sum+p.value,0)/todayDelivery.length : null;
-      const average = complete(delivery) ? delivery.reduce((sum,p)=>sum+p.value,0)/delivery.length : null;
+        summary(todayDelivery).mean : null;
+      const average = complete(delivery) ? summary(delivery).mean : null;
       const peak = average!==null ? delivery.reduce((a,b)=>a.value>b.value?a:b) : null;
       const countNegative = delivery.filter(p=>p.value<0).length;
       const previous = current && fr.find(p=>Date.parse(p.at)===Date.parse(current.at)-86400000);
@@ -928,8 +934,8 @@
       const age = Date.now()-Date.parse(latestCheck||0);
       const direct = Boolean(powerPrices.live_checked_at) && age<10*60000;
       status.textContent = direct ? 'Prix · API vérifiée '+parisTime(latestCheck) :
-        'Prix · archive '+(latestCheck?parisTime(latestCheck):'sans date');
-      status.className = 'badge '+(direct || age<4*3600000 ? 'good' : 'warn');
+        complete(todayDelivery) ? 'Prix · day-ahead d’aujourd’hui connu' : 'Prix · archive '+(latestCheck?parisTime(latestCheck):'sans date');
+      status.className = 'badge '+(direct || complete(todayDelivery) ? 'good' : 'warn');
       hero.textContent=current ? number(current.value,2) : '—';
       heroTime.textContent=current ? 'Livraison '+parisTime(current.at) : 'Créneau actuel non publié';
       heroDelta.textContent=current&&previous ? 'Même créneau il y a 24 h : '+
@@ -937,7 +943,7 @@
         ' €/MWh · comparaison des enchères' : 'Prix fixé lors de l’enchère de la veille · pas une cotation intraday.';
       const yesterday=localDay(Date.parse(today+'T12:00:00Z')-86400000);
       const yesterdayDelivery=fr.filter(p=>localDay(p.at)===yesterday);
-      const yesterdayMean=complete(yesterdayDelivery)?yesterdayDelivery.reduce((sum,p)=>sum+p.value,0)/yesterdayDelivery.length:null;
+      const yesterdayMean=complete(yesterdayDelivery)?summary(yesterdayDelivery).mean:null;
       const nextPublished=average!==null;
       const shownDay=nextPublished?delivery:todayDelivery;
       const shownMean=nextPublished?average:todayAverage;
@@ -1021,7 +1027,7 @@
         'Le marché valorise la livraison de demain à '+number(average,2)+' €/MWh en moyenne ('+
         (direction>=0?'+':'')+number(direction,2)+' €/MWh face à aujourd’hui). '+
         (peak?'Point haut '+number(peak.value,2)+' €/MWh à '+parisTime(peak.at)+'.':'') :
-        'Le profil day-ahead de demain est encore en attente ou incomplet : la comparaison journalière est suspendue.';
+        shownMean!==null ? 'Aujourd’hui : '+number(shownMean,2)+' €/MWh en moyenne'+(compareMean!==null?' ('+(shownMean>=compareMean?'+':'')+number(shownMean-compareMean,2)+' €/MWh face à hier).':'.')+' Le profil de demain n’est pas encore reçu.' : 'Profil de livraison incomplet : aucune moyenne journalière publiée ici.';
       evidence.textContent=(current&&counterpart ? 'France − DE-LU sur le créneau livré : '+
         (current.value-counterpart.value>=0?'+':'')+number(current.value-counterpart.value,2)+' €/MWh. ' : '')+
         (average!==null ? countNegative*interval+' minute(s) à prix négatif demain. ' : '')+
@@ -1030,20 +1036,16 @@
         const tile=line('','article','power-alert'+(warm?' warm':''));
         tile.append(line(label,'small'),line(value,'strong'),line(note,'span'));alerts.append(tile);
       };
-      addAlert('REPRICING J+1',direction!==null ?
-        (direction>=0?'+':'')+number(direction,2)+' €/MWh' : 'En attente',
-        direction!==null?'Moyenne demain vs aujourd’hui · enchère day-ahead':'Deux jours complets requis',
-        direction!==null&&Math.abs(direction)>=20);
-      addAlert('HEURE DE POINTE',peak ? number(peak.value,2)+' €/MWh' : 'En attente',
-        peak ? 'Livraison '+parisTime(peak.at)+' · '+number(peak.value-average,1)+
-          ' €/MWh au-dessus de la moyenne de demain':'Enchère de demain non complète',
-        peak&&peak.value-average>=50);
-      addAlert('ÉCART FRANCE / DE-LU',current&&counterpart ?
-        (current.value-counterpart.value>=0?'+':'')+number(current.value-counterpart.value,2)+' €/MWh' : 'En attente',
-        'Même créneau de livraison · positif = France plus chère',
-        current&&counterpart&&Math.abs(current.value-counterpart.value)>=20);
-      if(countNegative&&average!==null)addAlert('PRIX NÉGATIFS DEMAIN',countNegative*interval+' min',
-        'Durée publiée à prix inférieur à 0 €/MWh',true);
+      const shownDirection=shownMean!==null&&compareMean!==null?shownMean-compareMean:null;
+      if(shownDirection!==null)addAlert(nextPublished?'DEMAIN VS AUJOURD’HUI':'AUJOURD’HUI VS HIER',
+        (shownDirection>=0?'+':'')+number(shownDirection,2)+' €/MWh',
+        'Moyennes des journées de livraison complètes',Math.abs(shownDirection)>=20);
+      if(shownPeak&&shownMean!==null)addAlert(nextPublished?'POINTE DE DEMAIN':'POINTE D’AUJOURD’HUI',
+        number(shownPeak.value,2)+' €/MWh','Livraison '+parisTime(shownPeak.at)+' · '+
+          number(shownPeak.value-shownMean,1)+' €/MWh au-dessus de la moyenne',shownPeak.value-shownMean>=50);
+      if(current&&counterpart)addAlert('ÉCART FRANCE / DE-LU',
+        (current.value-counterpart.value>=0?'+':'')+number(current.value-counterpart.value,2)+' €/MWh',
+        'Même créneau de livraison · positif = France plus chère',Math.abs(current.value-counterpart.value)>=20);
       reading.textContent='Le prix day-ahead est fixé la veille pour chaque période de livraison. '+
         (observed ? 'Dernière mesure physique RTE : '+parisTime(observed.at)+'. ' : '')+
         'Pour expliquer un mouvement, examiner aussi la météo, les disponibilités des centrales, les interconnexions et le gaz ; ces facteurs ne sont pas tous mesurés ici.';

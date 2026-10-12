@@ -37,7 +37,7 @@ def build_dashboard(root: Path = ROOT) -> Path:
     template = (root / "app/template.html").read_text(encoding="utf-8")
     inputs = {
         "/*__STYLES__*/": (root / "app/styles.css").read_text(encoding="utf-8"),
-        "/*__APP__*/": (root / "app/cockpit.js").read_text(encoding="utf-8"),
+        "/*__APP__*/": (root / "app/power_metrics.js").read_text(encoding="utf-8") + "\n" + (root / "app/cockpit.js").read_text(encoding="utf-8"),
         "__SNAPSHOT__": encode_json(load_snapshot(root)),
         "__POWER_HISTORY__": encode_json(json.loads((root / "data/power_fr.json").read_text(encoding="utf-8"))),
         "__POWER_PRICES__": encode_json(json.loads((root / "data/power_prices.json").read_text(encoding="utf-8"))),

@@ -17,6 +17,7 @@ const http=require('node:http');
     for(const viewport of [{width:1440,height:1000},{width:390,height:844},{width:320,height:760}]){
       const page=await browser.newPage({viewport}),errors=[];
       page.on('pageerror',error=>errors.push(error.message));
+      page.on('console',message=>{if(message.type()==='error'&&message.text().includes('Panneau indisponible'))errors.push(message.text());});
       // Offline is a real supported operating mode. Abort external calls;
       // retain the actual embedded data and exercise the visible fallback.
       await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());

@@ -9,7 +9,7 @@ from scripts.update_data import (build_snapshot, parse_alsi, parse_eia_spot, par
                                  parse_oil_price_mirror, merge_power_history, parse_power_price,
                                  merge_power_prices,
                                  parse_power_daily, parse_ttf_ngp, parse_ttf_monthly,
-                                 parse_crop_progress, crop_progress_link,
+                                 parse_crop_progress, crop_progress_link, eex_ngp_enabled,
                                  verified_calendar)
 
 
@@ -399,6 +399,13 @@ Cotton Bolls Opening - Selected States'''
         self.assertFalse(any(e['at'].startswith('2026-10-14') for e in events))
         self.assertTrue(any(e['title'].startswith('USDA') and
                             e['at'] == '2026-10-09T16:00:00+00:00' for e in events))
+
+    def test_ngp_republication_is_disabled_without_an_explicit_rights_flag(self):
+        for value in ('', 'false', '1', 'yes'):
+            with patch.dict('os.environ', {'EEX_NGP_REDISTRIBUTION_ALLOWED': value}):
+                self.assertFalse(eex_ngp_enabled())
+        with patch.dict('os.environ', {'EEX_NGP_REDISTRIBUTION_ALLOWED': 'true'}):
+            self.assertTrue(eex_ngp_enabled())
 
 
 if __name__ == '__main__':
