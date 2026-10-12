@@ -33,3 +33,10 @@
 
 ## Méthode de validation d'une nouvelle source
 Documenter URL officielle, produit exact, unité, fréquence, observation/publication/collecte, authentification, conditions d'utilisation, limites de requêtes, couverture historique, contrôles, repli et date de la dernière vérification. Une source proposée reste marquée « à vérifier » tant qu'une réponse utilisable et les droits n'ont pas été établis.
+
+
+## 12 octobre 2026 — Refonte en cours de validation
+- Référence de présentation supplémentaire : https://github.com/ronysitepu/commodity-dashboard (pas de licence déclarée). Organisation observée : cartes compactes, tableaux et catégories. Interface réimplémentée indépendamment ; aucune copie de ses prix ni de son code.
+- NGP EEX : accès public confirmé, mais republication systématique restreinte. Collecte désormais désactivée par défaut ; condition explicite de droits. Le TTF mensuel Banque mondiale/BCE reste affiché avec sa fréquence.
+- Crop Progress : le rapport officiel du 5 octobre existe à https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt. Collecte corrigée pour examiner les pages de publication datées et garder la plus récente réponse valide.
+- Historiques longs : archive préparée le 2 octobre conservée séparément ; fusion par date avec priorité aux observations récentes. Le workflow doit confirmer le nouveau chargement complet GIE avant de présenter 2023/2024 comme reçues.

@@ -13,18 +13,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, time, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 import math
 import os
 from pathlib import Path
 import re
 import sys
+from threading import Lock
+from time import monotonic, sleep
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, urljoin
 import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
+from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "data" / "snapshot.json"
@@ -62,6 +65,40 @@ ENTSOE_URL = "https://web-api.tp.entsoe.eu/api"
 ENTSOE_REPORT_URL = "https://transparency.entsoe.eu/"
 POWER_ZONES = {"fr": "10YFR-RTE------C", "de": "10Y1001A1001A82H"}
 POWER_PRICE_SOURCE = "https://api.energy-charts.info/price"
+TTF_NGP_URL = "https://gasandregistry.eex.com/Gas/NGP/TTF_NGP_15_Mins.csv"
+TTF_NGP_HISTORY_URL = "https://gasandregistry.eex.com/Gas/NGP/TTF_NGP_60_Days.csv"
+TTF_REPORT_URL = "https://www.eex.com/en/markets/natural-gas/gas-market-transparency"
+WB_REPORT_URL = "https://www.worldbank.org/en/research/commodity-markets"
+WB_MONTHLY_URL = ("https://thedocs.worldbank.org/en/doc/"
+                  "74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx")
+ECB_FX_URL = "https://data-api.ecb.europa.eu/service/data/EXR/M.USD.EUR.SP00.A"
+PARIS = ZoneInfo("Europe/Paris")
+POWER_API_LOCK = Lock()
+POWER_API_LAST_REQUEST = 0.0
+
+
+def comparison_start(today: date) -> date:
+    """Three complete prior calendar years plus the current year."""
+    return date(today.year - 3, 1, 1)
+
+
+def fetch_power_url(url: str) -> bytes:
+    """Serialize this provider's calls, including concurrent recent/annual tasks."""
+    global POWER_API_LAST_REQUEST
+    for attempt in range(3):
+        with POWER_API_LOCK:
+            pause = 3 - (monotonic() - POWER_API_LAST_REQUEST)
+            if pause > 0:
+                sleep(pause)
+            POWER_API_LAST_REQUEST = monotonic()
+            try:
+                return fetch(url)
+            except HTTPError as error:
+                if error.code != 429 or attempt == 2:
+                    raise
+                # Keep the shared source quiet while its rate limit clears.
+                sleep(10 * (attempt + 1))
+    raise ValueError("Power API unavailable")
 
 
 def fetch(url: str, headers: dict[str, str] | None = None) -> bytes:
@@ -221,7 +258,7 @@ def fetch_power_price(zone: str, now: datetime) -> bytes:
     params = {"bzn": "FR" if zone == "fr" else "DE-LU",
               "start": (now.date() - timedelta(days=9)).isoformat(),
               "end": (now.date() + timedelta(days=2)).isoformat()}
-    return fetch(POWER_PRICE_SOURCE + "?" + urlencode(params))
+    return fetch_power_url(POWER_PRICE_SOURCE + "?" + urlencode(params))
 
 
 def parse_power_price(raw: bytes, zone: str, now: datetime) -> dict:
@@ -283,6 +320,191 @@ def save_power_prices(previous: dict, results: dict, now: datetime) -> None:
         raise ValueError("No licensed power prices to publish")
     POWER_PRICES.write_text(json.dumps(prices, ensure_ascii=False, separators=(",", ":")) + "\n",
                             encoding="utf-8")
+
+
+def parse_power_daily(raw: bytes, start: date, end: date) -> dict:
+    """Duration-weighted delivery-day averages, including 23/25-hour Paris days."""
+    data = json.loads(raw)
+    licence = data.get("license_info", "")
+    if "CC BY 4.0" not in licence or "EUR" not in str(data.get("unit", "")).upper():
+        raise ValueError("Historical power licence or currency invalid")
+    stamps, prices = data.get("unix_seconds"), data.get("price")
+    if not isinstance(stamps, list) or not isinstance(prices, list) or len(stamps) != len(prices):
+        raise ValueError("Historical power arrays invalid")
+    by_stamp = {stamp: measured(value) for stamp, value in zip(stamps, prices)
+                if isinstance(stamp, int)}
+    ordered = sorted(by_stamp)
+    steps = [b - a for a, b in zip(ordered, ordered[1:]) if 0 < b - a <= 3600]
+    if not steps:
+        raise ValueError("Historical power delivery intervals missing")
+    # Missing observations never get the whole gap attributed to one price.
+    default_step = sorted(steps)[len(steps) // 2]
+    days = {}
+    for i, stamp in enumerate(ordered):
+        value = by_stamp[stamp]
+        day = datetime.fromtimestamp(stamp, PARIS).date()
+        if value is None or not -5000 <= value <= 5000 or not start <= day <= end:
+            continue
+        nearby = [ordered[j + 1] - ordered[j] for j in range(max(0, i - 1), min(len(ordered) - 1, i + 2))
+                  if 0 < ordered[j + 1] - ordered[j] <= 3600]
+        step = sorted(nearby)[len(nearby) // 2] if nearby else default_step
+        duration = min(ordered[i + 1] - stamp, step) if i + 1 < len(ordered) else step
+        if duration <= 0:
+            continue
+        total, seconds = days.get(day, (0.0, 0))
+        days[day] = (total + value * duration, seconds + duration)
+    points = []
+    for day, (total, seconds) in sorted(days.items()):
+        midnight = datetime.combine(day, time.min, PARIS).astimezone(timezone.utc)
+        following = datetime.combine(day + timedelta(days=1), time.min, PARIS).astimezone(timezone.utc)
+        expected = int((following - midnight).total_seconds())
+        if expected * .99 <= seconds <= expected:
+            points.append({"date": day.isoformat(), "value": round(total / seconds, 2)})
+    if not points:
+        raise ValueError("No complete historical power delivery day")
+    return {"points": points, "licence": licence}
+
+
+def fetch_power_seasonal(previous: dict, now: datetime) -> dict:
+    today = now.astimezone(PARIS).date()
+    old = {p["date"]: p for p in previous.get("history", {}).get("power_prices_daily", [])
+           if isinstance(p, dict) and isinstance(p.get("date"), str) and
+           comparison_start(today).isoformat() <= p["date"] <= today.isoformat() and
+           measured(p.get("value")) is not None}
+    licence = previous.get("sources", {}).get("power_seasonal", {}).get("licence", "")
+    requests = []
+    for year in range(today.year - 3, today.year + 1):
+        start, end = date(year, 1, 1), date(year, 12, 31)
+        covered = sum(p.startswith(str(year)) for p in old)
+        if year < today.year and covered >= (end - start).days:
+            continue
+        if year == today.year:
+            end = today
+            if covered >= (today - start).days - 3:
+                start = max(start, today - timedelta(days=10))
+        requests.append((start, end))
+    def collect(bounds):
+        start, end = bounds
+        url = POWER_PRICE_SOURCE + "?" + urlencode({"bzn": "FR", "start": start.isoformat(),
+                                                     "end": end.isoformat()})
+        return parse_power_daily(fetch_power_url(url), start, end)
+    for bounds in requests:
+        result = collect(bounds)
+        licence = result["licence"]
+        old.update({p["date"]: p for p in result["points"]})
+    points = sorted(old.values(), key=lambda p: p["date"])
+    if not points or "CC BY 4.0" not in licence:
+        raise ValueError("Seasonal power history unavailable")
+    return {"points": points, "as_of": points[-1]["date"], "licence": licence,
+            "url": "https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=FR",
+            "provenance": "Moyenne quotidienne pondérée par durée · Fraunhofer / SMARD"}
+
+
+def xlsx_rows(raw: bytes, sheet_name: str) -> list[dict[str, str]]:
+    """Read a named official XLSX sheet using the Python standard library."""
+    with ZipFile(BytesIO(raw)) as book:
+        if sum(info.file_size for info in book.infolist()) > 30_000_000:
+            raise ValueError("Spreadsheet unexpectedly large")
+        shared = ET.fromstring(book.read("xl/sharedStrings.xml"))
+        strings = ["".join(node.itertext()) for node in shared]
+        workbook = ET.fromstring(book.read("xl/workbook.xml"))
+        sheet = next((s for s in workbook.findall(".//{*}sheet")
+                      if s.get("name") == sheet_name), None)
+        if sheet is None:
+            raise ValueError("Spreadsheet price sheet missing")
+        rel_id = sheet.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
+        rels = ET.fromstring(book.read("xl/_rels/workbook.xml.rels"))
+        target = next((r.get("Target") for r in rels if r.get("Id") == rel_id), "")
+        path = target.lstrip("/") if target.startswith("/") else "xl/" + target
+        root = ET.fromstring(book.read(path))
+        rows = []
+        for row in root.findall(".//{*}row"):
+            values = {}
+            for cell in row:
+                value = cell.findtext("{*}v")
+                if cell.get("t") == "s" and value is not None:
+                    value = strings[int(value)]
+                elif cell.get("t") == "inlineStr":
+                    value = "".join(cell.find("{*}is").itertext())
+                if value is not None:
+                    values[re.sub(r"\d", "", cell.get("r", ""))] = value
+            rows.append(values)
+        return rows
+
+
+def parse_ttf_monthly(raw: bytes, fx_raw: bytes, today: date) -> dict:
+    rows = xlsx_rows(raw, "Monthly Prices")
+    header = next((r for r in rows if "Natural gas, Europe" in r.values()), None)
+    if header is None:
+        raise ValueError("World Bank TTF column missing")
+    column = next(k for k, v in header.items() if v == "Natural gas, Europe")
+    header_pos = rows.index(header)
+    if not any("mmbtu" in str(r.get(column, "")).lower() for r in rows[header_pos + 1:header_pos + 4]):
+        raise ValueError("World Bank TTF unit changed")
+    fx = {}
+    for row in csv.DictReader(StringIO(fx_raw.decode("utf-8-sig"))):
+        value = measured(row.get("OBS_VALUE"))
+        if (row.get("FREQ") == "M" and row.get("CURRENCY") == "USD" and
+                row.get("CURRENCY_DENOM") == "EUR" and value is not None and .5 < value < 2):
+            fx[row["TIME_PERIOD"]] = value
+    points = []
+    for row in rows[header_pos + 1:]:
+        month = str(row.get("A", ""))
+        if not re.fullmatch(r"20\d\dM\d\d", month):
+            continue
+        day = date(int(month[:4]), int(month[-2:]), 1)
+        value, exchange = measured(row.get(column)), fx.get(day.strftime("%Y-%m"))
+        if comparison_start(today) <= day <= today and value is not None and 0 < value < 150 and exchange:
+            points.append({"date": day.isoformat(), "value": round(value * 3.412141633 / exchange, 2),
+                           "usd_mmbtu": value, "usd_per_eur": exchange})
+    points.sort(key=lambda p: p["date"])
+    if len(points) < 12 or (today - date.fromisoformat(points[-1]["date"])).days > 100:
+        raise ValueError("World Bank TTF history incomplete or stale")
+    return {"points": points, "as_of": points[-1]["date"][:7], "url": WB_REPORT_URL,
+            "provenance": "TTF · moyenne mensuelle Banque mondiale · conversion BCE EUR/MWh",
+            "licence": "Banque mondiale · conditions des jeux de données ; attribution BCE pour le change"}
+
+
+def fetch_ttf_monthly(today: date) -> dict:
+    # Follow the current public workbook link: World Bank changes its folder each year.
+    landing = fetch(WB_REPORT_URL).decode("utf-8", "replace")
+    links = re.findall(r'href=["\']([^"\']*CMO-Historical-Data-Monthly\.xlsx)["\']', landing, re.I)
+    url = unescape(links[0]) if links else WB_MONTHLY_URL
+    if not url.startswith("https://thedocs.worldbank.org/"):
+        raise ValueError("Unexpected World Bank workbook URL")
+    return parse_ttf_monthly(fetch(url), fetch(ECB_FX_URL + "?" + urlencode({
+        "startPeriod": comparison_start(today).strftime("%Y-%m"), "format": "csvdata"})), today)
+
+
+def parse_ttf_ngp(raw: bytes, history_raw: bytes, now: datetime) -> dict:
+    today = now.astimezone(PARIS).date()
+    rows = csv.DictReader(StringIO(raw.decode("utf-8-sig")), delimiter=";")
+    current = None
+    for row in rows:
+        day = datetime.strptime(row["Gasday"], "%d/%m/%Y").date()
+        value = measured(row.get("IndexValue (€/MWh)"))
+        stamp = datetime.strptime(row["Timestamp Let"], "%d/%m/%Y %H:%M").replace(tzinfo=PARIS)
+        if day == today and value is not None and 0 < value < 2000 and now - timedelta(hours=30) <= stamp <= now + timedelta(hours=1):
+            current = (day, value, stamp, row.get("Status", ""))
+    if current is None:
+        raise ValueError("TTF current gas day or timestamp missing")
+    day, value, stamp, status = current
+    points = []
+    for row in csv.DictReader(StringIO(history_raw.decode("utf-8-sig")), delimiter=";"):
+        dated = date.fromisoformat(row["Delivery date"])
+        price = measured(row.get("Index Value (€/MWh)"))
+        if dated <= today and price is not None and 0 < price < 2000:
+            points.append({"date": dated.isoformat(), "value": price})
+    points.sort(key=lambda p: p["date"])
+    previous = next((p for p in reversed(points) if p["date"] < day.isoformat()), None)
+    item = metric("price_ttf", "gas", "TTF · indice spot NGP", value, "€/MWh",
+                  value - previous["value"] if previous else None, "vs dernier NGP final",
+                  day.isoformat(), "EEX · TTF Neutral Gas Price", TTF_REPORT_URL,
+                  "Indice pondéré de transactions spot ; provisoire pendant la journée gazière.")
+    item.update(observed_at=stamp.astimezone(timezone.utc).isoformat(),
+                quality="provisoire" if "Temporary" in status else "final")
+    return {"metrics": [item], "points": points, "as_of": item["observed_at"],
+            "url": TTF_REPORT_URL, "provenance": "EEX · TTF NGP · moyenne spot pondérée"}
 
 
 def entsoe_query(zone: str, now: datetime, token: str) -> bytes:
@@ -411,7 +633,7 @@ def parse_oil_price_history(raw: bytes, today: date) -> dict:
     day_field = "observation_date" if "observation_date" in fields else "DATE"
     if not {day_field, "DCOILBRENTEU", "DCOILWTICO"} <= fields:
         raise ValueError("FRED oil price columns missing")
-    cutoff = today - timedelta(days=370)
+    cutoff = comparison_start(today)
     series = {"brent": [], "wti": []}
     for row in rows:
         try:
@@ -426,7 +648,7 @@ def parse_oil_price_history(raw: bytes, today: date) -> dict:
                 series[name].append({"date": day.isoformat(), "value": round(value, 2)})
     if min(map(len, series.values())) < 100 or max(
             (today - date.fromisoformat(points[-1]["date"])).days for points in series.values()) > 15:
-        raise ValueError("FRED one-year oil history missing or stale")
+        raise ValueError("FRED oil history missing or stale")
     return {"series": series, "as_of": max(series["brent"][-1]["date"], series["wti"][-1]["date"]),
             "url": "https://fred.stlouisfed.org/"}
 
@@ -434,7 +656,7 @@ def parse_oil_price_history(raw: bytes, today: date) -> dict:
 def parse_oil_price_mirror(brent_raw: bytes, wti_raw: bytes, today: date) -> dict:
     """Secondary, dated EIA mirror when FRED cannot be reached by Actions."""
     series = {}
-    cutoff = today - timedelta(days=370)
+    cutoff = comparison_start(today)
     for name, raw in (("brent", brent_raw), ("wti", wti_raw)):
         reader = csv.DictReader(StringIO(raw.decode("utf-8-sig", "replace")))
         if not {"Date", "Price"} <= set(reader.fieldnames or []):
@@ -459,7 +681,9 @@ def parse_oil_price_mirror(brent_raw: bytes, wti_raw: bytes, today: date) -> dic
 
 def fetch_oil_price_history(today: date) -> dict:
     try:
-        return parse_oil_price_history(fetch(OIL_PRICE_HISTORY_URL), today)
+        url = FRED_URL + "?" + urlencode({"id": "DCOILBRENTEU,DCOILWTICO",
+                                         "cosd": comparison_start(today).isoformat()})
+        return parse_oil_price_history(fetch(url), today)
     except Exception:
         return parse_oil_price_mirror(fetch(OIL_MIRROR_BASE + "brent-daily.csv"),
                                       fetch(OIL_MIRROR_BASE + "wti-daily.csv"), today)
@@ -517,8 +741,25 @@ def parse_crop_progress(raw: bytes, url: str, today: date) -> dict:
 
 
 def fetch_crop_progress(today: date) -> dict:
-    url = crop_progress_link(fetch(CROP_PROGRESS_URL))
-    return parse_crop_progress(fetch(url), url, today)
+    """Use dated official release pages if the publication index is stale/broken."""
+    candidates = []
+    monday = today - timedelta(days=today.weekday())
+    for offset in (0, 7, 14):
+        candidates.append(CROP_PROGRESS_URL + "/" + (monday - timedelta(days=offset)).isoformat())
+    candidates.append(CROP_PROGRESS_URL)
+    reports = []
+    for page in candidates:
+        try:
+            url = crop_progress_link(fetch(page))
+            report = parse_crop_progress(fetch(url), url, today)
+            reports.append(report)
+            if date.fromisoformat(report["as_of"]) >= monday - timedelta(days=7):
+                break
+        except (OSError, ValueError):
+            continue
+    if not reports:
+        raise ValueError("USDA Crop Progress official release unavailable; retain archive")
+    return max(reports, key=lambda report: report["as_of"])
 
 
 def parse_gas(raw: bytes) -> dict:
@@ -815,16 +1056,21 @@ def parse_gie(raw: bytes, region: str = "eu") -> dict:
             "url": GIE_REPORT_URL, "points": points}
 
 
-def fetch_gie_history(url: str, key: str) -> bytes:
-    """Fetch two documented 300-row pages, sufficient for seasonal comparison."""
+def fetch_gie_history(url: str, key: str, today: date | None = None) -> bytes:
+    """Fetch all requested calendar years; pagination is capped at 300 by GIE."""
+    today = today or datetime.now(PARIS).date()
+    url += "&from=" + comparison_start(today).isoformat() + "&to=" + today.isoformat()
     first = json.loads(fetch(url + "&page=1", {"x-key": key}))
     if not isinstance(first.get("data"), list):
         raise ValueError("GIE first page missing")
-    if int(first.get("last_page", 1)) > 1:
-        second = json.loads(fetch(url + "&page=2", {"x-key": key}))
-        if not isinstance(second.get("data"), list):
-            raise ValueError("GIE second page missing")
-        first["data"].extend(second["data"])
+    pages = int(first.get("last_page", 1))
+    if not 1 <= pages <= 6:
+        raise ValueError("GIE historical pagination unexpected")
+    for page in range(2, pages + 1):
+        following = json.loads(fetch(url + "&page=" + str(page), {"x-key": key}))
+        if not isinstance(following.get("data"), list):
+            raise ValueError("GIE historical page missing")
+        first["data"].extend(following["data"])
     return json.dumps(first).encode("utf-8")
 
 
@@ -919,7 +1165,10 @@ def verified_calendar(today: date) -> list[dict]:
 
 def get_previous() -> dict:
     if SNAPSHOT.exists():
-        return json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+        if str(ROOT) not in sys.path:
+            sys.path.insert(0, str(ROOT))
+        from scripts.build_dashboard import load_snapshot
+        return load_snapshot(ROOT)
     return {"metrics": [], "sources": {}, "stories": [], "history": {}}
 
 
@@ -930,7 +1179,8 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
     stories = previous.get("stories", [])
     for key in ("oil", "oil_flows", "oil_history", "oil_price_history", "gas", "wasde", "crop_progress", "news", "norway",
                 "brent", "wti", "henry", "gie", "gie_fr", "alsi", "alsi_fr",
-                "rte_power", "entsoe_fr", "entsoe_de", "power_price_fr", "power_price_de"):
+                "rte_power", "entsoe_fr", "entsoe_de", "power_price_fr", "power_price_de",
+                "power_seasonal", "ttf_monthly", "ttf_ngp"):
         result = results.get(key)
         if isinstance(result, Exception):
             old = sources.get(key, {})
@@ -972,6 +1222,12 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
             history["oil_crude"] = result["points"]
         if key == "oil_price_history":
             history["oil_prices"] = result["series"]
+        if key in ("power_seasonal", "ttf_monthly"):
+            history["power_prices_daily" if key == "power_seasonal" else "ttf_monthly"] = result["points"]
+        if key == "ttf_ngp":
+            combined = {p["date"]: p for p in [*history.get("ttf_daily", []), *result["points"]]
+                        if p["date"] >= comparison_start(now.astimezone(PARIS).date()).isoformat()}
+            history["ttf_daily"] = sorted(combined.values(), key=lambda p: p["date"])
         if key in ("gie", "gie_fr", "alsi", "alsi_fr") and result.get("points"):
             history[{"gie": "gas_eu", "gie_fr": "gas_fr",
                      "alsi": "lng_eu_sendout", "alsi_fr": "lng_fr_sendout"}[key]] = result["points"]
@@ -997,54 +1253,19 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
 
 
 def save_snapshot(snapshot: dict) -> None:
-    serialized = json.dumps(snapshot, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    serialized = json.dumps(snapshot, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n"
     SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
     SNAPSHOT.write_text(serialized, encoding="utf-8")
-    html = HTML.read_text(encoding="utf-8")
-    embed = serialized.replace("<", "\\u003c").replace(">", "\\u003e")
-    tag = re.compile(r'(<script id="snapshot-data" type="application/json">)(.*?)(</script>)', re.S)
-    html, count = tag.subn(lambda match: match.group(1) + "\n" + embed + match.group(3), html)
-    if count != 1:
-        raise ValueError("snapshot tag missing from index.html")
-    if POWER_HISTORY.exists():
-        power_data = POWER_HISTORY.read_text(encoding="utf-8").replace("<", "\\u003c")
-        power_tag = re.compile(r'(<script id="power-history-data" type="application/json">)(.*?)(</script>)', re.S)
-        html, count = power_tag.subn(lambda match: match.group(1) + "\n" + power_data + match.group(3), html)
-        if count != 1:
-            raise ValueError("power history tag missing from index.html")
-    if POWER_PRICES.exists():
-        price_data = POWER_PRICES.read_text(encoding="utf-8").replace("<", "\\u003c")
-        price_tag = re.compile(r'(<script id="power-price-data" type="application/json">)(.*?)(</script>)', re.S)
-        html, count = price_tag.subn(lambda match: match.group(1) + "\n" + price_data + match.group(3), html)
-        if count != 1:
-            raise ValueError("power price tag missing from index.html")
-    HTML.write_text(html, encoding="utf-8")
-    readme = ("# Commodity Cockpit\n\n"
-              "Tableau de bord personnel des matières premières. Dans l'onglet **Code**, ouvrir [`index.html`](index.html), cliquer sur **Raw** ou **Download raw file**, enregistrer le fichier en `.html`, puis l'ouvrir dans un navigateur. Le code HTML complet figure aussi ci-dessous.\n\n"
-              "Les cotations en séance Brent, WTI et gaz US sont des widgets TradingView/OANDA : elles demandent Internet et sont indicatives, distinctes du contrat ICE et de Henry Hub physique. Le spot officiel EIA est montré séparément avec sa date. Les autres chiffres officiels sont collectés par [la tâche planifiée](.github/workflows/update-data.yml). Le bouton **Actualiser les données** récupère la dernière publication GitHub même depuis un HTML téléchargé ; hors connexion, le fichier garde son instantané daté. L'onglet **Power FR** montre les prix day-ahead France/DE-LU, les observations RTE, une lecture des écarts et les prévisions de demande ENTSO-E. [Méthodologie, unités et limites](methodology.md).\n\n"
-              "## Sources & automatisation\n\n"
-              "- EIA WPSR : stocks de brut, Cushing, Gulf Coast, essence, distillats, jet et SPR ; production, importations, exportations et brut traité par les raffineries US.\n"
-              "- EIA WNGSR : stockage de gaz US et régions, variation hebdomadaire et écart à la moyenne cinq ans.\n"
-              "- USDA WASDE : production, exportations prévues et stocks de maïs et soja US ; stocks mondiaux de maïs et blé, commerce mondial prévu du blé. Les révisions comparent les deux colonnes de prévision du même rapport.\n"
-              "- USDA NASS Crop Progress : état bon/excellent du maïs et du soja US comparé à la même semaine N−1, avancement de récolte comparé à la moyenne cinq ans ; rapport hebdomadaire en saison, daté et validé avant publication. Les liens FranceAgriMer et météo restent des sources à consulter, pas des observations inventées.\n"
-              "- EIA Today in Energy : titres et résumés d'analyses récentes.\n"
-              "- Sodir (Norwegian Offshore Directorate) : chiffre mensuel provisoire d'août 2026 (pétrole, LGN et condensats), repère européen daté ; la source refuse actuellement les lectures automatisées du robot GitHub et ce chiffre n'est donc pas rafraîchi automatiquement.\n"
-              "- EIA, tableaux de prix spot quotidiens : Brent Europe, WTI Cushing et Henry Hub ; le collecteur vérifie la correspondance des six dates et six colonnes avant publication. Une série de 12 mois compare les clôtures spot Brent et WTI : FRED, puis miroir public EIA `datasets/oil-prices` si FRED est indisponible, avec date et provenance explicites ; elle ne se substitue pas à la cotation en séance.\n"
-              "- GIE AGSI+ / ALSI : avec une clé API gratuite (accès aux **deux plateformes**), stockage gaz France/UE, soutirage net, stocks en cuves GNL et émissions des terminaux GNL France/UE. Ce sont des observations physiques quotidiennes, **pas des prix TTF, PEG ou JKM**. Créer la clé sur https://agsi.gie.eu/account, choisir accès AGSI + ALSI et enregistrer `GIE_API_KEY` dans Settings → Secrets and variables → Actions → New repository secret. Relancer le workflow depuis Actions. Sans clé, ces chiffres ne sont pas affichés.\n"
-              "- RTE éCO2mix national temps réel : [dataset officiel](https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/) actualisé à la source au quart d'heure ; consommation, nucléaire, gaz, vent, solaire, hydraulique, bioénergies et échanges physiques. Export = solde négatif ; import = positif. Le cockpit collecte les dernières pages toutes les deux heures et conserve le dernier relevé de chaque heure dans `data/power_fr.json` sur 365 jours glissants. L'historique s'accumule depuis la première collecte, il n'invente pas une année déjà acquise. Il est aussi embarqué dans le HTML téléchargé. Demande résiduelle = consommation − éolien − solaire (calcul indicatif, **pas une prévision du prix**). Aucun compte requis.\n"
-              "- ENTSO-E : prévision *day-ahead* de demande (A65/A01, Article 6.1.b, données [CC BY 4.0](https://transparencyplatform.zendesk.com/hc/en-us/articles/40921911218961-Legal-Terms-and-Conditions)), France et Allemagne/Luxembourg ; affichage du pic prévu pour les prochaines 24 heures. Pour activer : créer un compte sur https://transparency.entsoe.eu/, demander l'accès API à `transparency@entsoe.eu` (objet `RESTful API access` et adresse enregistrée dans le corps), puis générer le jeton dans « My Account ». Enregistrer le jeton **uniquement** comme secret GitHub Actions `ENTSOE_API_TOKEN` via Settings → Secrets and variables → Actions → New repository secret ; relancer l'action. Ne jamais le coller dans le HTML, un fichier GitHub ou une conversation. Sans clé, RTE Power fonctionne déjà.\n"
-              "- Prix day-ahead France et DE-LU : API Fraunhofer ISE Energy-Charts. Le collecteur exige explicitement la mention de licence CC BY 4.0 dans chaque réponse et une unité EUR/MWh ; sinon il refuse la publication. L'attribution exacte déclarée par la réponse (actuellement Bundesnetzagentur / SMARD) accompagne les chiffres. `data/power_prices.json` conserve un historique glissant d'un an à partir des points réellement collectés. Le prix porte sur la **livraison** de chaque quart d'heure ou heure, il a été fixé la veille ; ce n'est pas un cours intraday en direct. Source et transformation sont affichées.\n"
-              "- Interface Power : le navigateur vérifie les prix day-ahead France/DE-LU sur Energy-Charts à l'ouverture et toutes les 30 minutes tant que le site est visible. Quand l'onglet Power est ouvert, il récupère les dernières observations RTE sur l'API publique ODRE toutes les 15 minutes, en respectant le quota de la source. Il valide la licence, les unités et les dates des prix ; si le réseau ou CORS refuse l'accès, il affiche l'instantané embarqué ou publié sur GitHub avec sa date. Les écarts de prix et facteurs physiques sont des calculs descriptifs, pas une preuve de causalité.\n"
-              "- Intraday continu France : [page de marché EPEX](https://www.epexspot.com/en/market-results) et [RTE](https://www.rte-france.com/en/data-publications/eco2mix/market-data) en accès direct. ENTSO-E 12.1.d rend obligatoire le day-ahead et l'intraday facultatif. RTE interdit la récupération des prix affichés dans éCO2mix et EPEX vend son flux de données ; le site ne fabrique donc pas un spread day-ahead/intraday. Les données de prix Fraunhofer sont attribuées conformément à la licence déclarée dans l'API.\n"
-              "- Calendrier natif : sorties EIA pétrole et gaz, USDA WASDE et STEO ; les exceptions 2026 connues sont incluses. Au-delà des dates vérifiées, le tableau l'indique sans inventer d'horaire.\n"
-              "- Marchés : cinq tuiles de cotations en séance TradingView/OANDA (Brent, WTI, gaz US, cuivre, or), plus un graphique et un tableau. Instruments OTC indicatifs ; ils ne remplacent ni les futures ICE/NYMEX ni le spot EIA daté. Le gaz US OANDA n'est pas une cotation Henry Hub physique. Les widgets nécessitent Internet et le fournisseur peut limiter la diffusion. Aluminium, cacao et café sont accessibles via leurs pages de marché ; leurs prix ne sont pas intégrés sans droits vérifiés.\n"
-              "- TTF/PEG/JKM : liens vers sources de marché ; un flux de cotations automatisé et redistribué publiquement nécessite un droit de diffusion. Aucune valeur ou spread instantané n'est inventé. ENTSO-E fournit des prévisions électriques ouvertes, ENTSOG des flux physiques de gaz, et GIE les stocks/terminaux.\n"
-              "- Physique : stockage AGSI France sur deux pages de 300 observations et comparaison de 90 jours à l'année précédente, émission ALSI France sur 14 jours, stocks de brut EIA sur 26 semaines et comparaison Brent/WTI spot sur un an lorsque FRED répond. Graphiques avec axes et unités. Les signaux de pression sont des scénarios conditionnels liés aux chiffres publiés, jamais un mouvement de prix constaté. FranceAgriMer Céré’Obs, USDA Crop Progress, Météo-France et NOAA sont liés dans Agriculture ; aucun état de culture n'est inventé si la source n'est pas collectée.\n"
-              "- USGS MCS 2026 : production mondiale de cuivre minier et d'aluminium primaire en 2025 (74 Mt contre 72,8 Mt en 2024 pour l'aluminium). Ce sont des repères annuels, sans signal de séance. LME : [rapports de stocks](https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports) à consulter, sans chiffre de stock automatisé tant qu'un flux stable n'est pas vérifié.\n\n"
-              "Unités : M bbl = millions de barils ; M bbl/j = millions de barils par jour ; Bcf = milliards de pieds cubes ; TWh = térawattheures ; GWh/j = gigawattheures par jour ; 10³ m³ GNL = milliers de mètres cubes de GNL liquide ; M bu = millions de boisseaux ; Mt = millions de tonnes. Stocks, prix et flux ne sont jamais additionnés.\n\n"
-              "Les clés restent dans les secrets GitHub et ne sont jamais insérées dans les fichiers publics. Le fichier HTML contient un instantané et s'ouvre directement après téléchargement. Il synchronise `data/snapshot.json` depuis GitHub à l'ouverture et via le bouton manuel, et tente les deux API publiques directement sur Power ; tout accès dépend du réseau et des règles du navigateur. Les tâches GitHub planifiées peuvent être retardées ou désactivées après une longue période sans activité ; dans ce cas, l'onglet Actions permet la relance manuelle.\n\n"
-              "## Code complet\n\n```html\n" + html + "\n```\n")
-    README.write_text(readme, encoding="utf-8")
+    # Compile the UI from its maintained sources; never rewrite README as code.
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from scripts.build_dashboard import build_dashboard
+    build_dashboard(ROOT)
+
+
+def eex_ngp_enabled() -> bool:
+    """Public redistribution requires rights, separate from public file access."""
+    return os.environ.get("EEX_NGP_REDISTRIBUTION_ALLOWED", "").strip().lower() == "true"
 
 
 def main() -> None:
@@ -1055,11 +1276,23 @@ def main() -> None:
         "oil_flows": lambda: parse_oil_flows(fetch(OIL_FLOW_URL)),
         "oil_history": lambda: parse_oil_history(fetch(OIL_HISTORY_URL)),
         "oil_price_history": lambda: fetch_oil_price_history(now.date()),
+        "power_seasonal": lambda: fetch_power_seasonal(previous, now),
+        "ttf_monthly": lambda: fetch_ttf_monthly(now.astimezone(PARIS).date()),
         "gas": lambda: parse_gas(fetch(GAS_URL)),
         "wasde": lambda: fetch_wasde(now.date()),
         "crop_progress": lambda: fetch_crop_progress(now.date()),
         "news": lambda: news_result(fetch(NEWS_URL)),
     }
+    if eex_ngp_enabled():
+        tasks["ttf_ngp"] = lambda: parse_ttf_ngp(fetch(TTF_NGP_URL), fetch(TTF_NGP_HISTORY_URL), now)
+    else:
+        # A downloadable CSV alone is not permission for systematic republication.
+        previous["metrics"] = [m for m in previous.get("metrics", []) if m["id"] != "price_ttf"]
+        previous.get("history", {}).pop("ttf_daily", None)
+        previous.setdefault("sources", {})["ttf_ngp"] = {
+            "status": "needs_licence", "checked_at": now.isoformat(),
+            "url": "https://www.eex.com/en/market-data/licensing-policies",
+            "message": "Cours spot sous licence non connecté ; aucun cours de substitution."}
     tasks["brent"] = lambda: parse_eia_spot(fetch(EIA_OIL_SPOT_URL), "brent", now.date())
     tasks["wti"] = lambda: parse_eia_spot(fetch(EIA_OIL_SPOT_URL), "wti", now.date())
     tasks["henry"] = lambda: parse_eia_spot(fetch(EIA_GAS_SPOT_URL), "henry", now.date())

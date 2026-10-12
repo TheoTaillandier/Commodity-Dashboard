@@ -8,6 +8,7 @@ from scripts.update_data import (build_snapshot, parse_alsi, parse_eia_spot, par
                                  parse_entsoe_forecast, parse_oil_price_history, fetch_gie_history,
                                  parse_oil_price_mirror, merge_power_history, parse_power_price,
                                  merge_power_prices,
+                                 parse_power_daily, parse_ttf_ngp, parse_ttf_monthly,
                                  parse_crop_progress, crop_progress_link,
                                  verified_calendar)
 
@@ -112,14 +113,72 @@ Cotton Bolls Opening - Selected States'''
         self.assertEqual(crop_progress_link(page),
                          'https://esmis.nal.usda.gov/sites/default/release-files/796068/prog3826_0.txt')
 
-    def test_gie_history_fetches_second_page_under_documented_limit(self):
+    def test_gie_history_reads_all_calendar_year_pages_under_documented_limit(self):
         page1 = json.dumps({'last_page':3,'data':[{'gasDayStart':'2026-09-27'}]}).encode()
         page2 = json.dumps({'last_page':3,'data':[{'gasDayStart':'2025-09-27'}]}).encode()
-        with patch('scripts.update_data.fetch', side_effect=[page1,page2]) as mocked:
-            result = json.loads(fetch_gie_history('https://agsi.gie.eu/api?country=fr&size=300','test-key'))
-        self.assertEqual(len(result['data']), 2)
-        self.assertEqual(mocked.call_args_list[1].args[0],
-                         'https://agsi.gie.eu/api?country=fr&size=300&page=2')
+        page3 = json.dumps({'last_page':3,'data':[{'gasDayStart':'2023-09-27'}]}).encode()
+        with patch('scripts.update_data.fetch', side_effect=[page1,page2,page3]) as mocked:
+            result = json.loads(fetch_gie_history('https://agsi.gie.eu/api?country=fr&size=300',
+                                                 'test-key',date(2026,10,2)))
+        self.assertEqual(len(result['data']), 3)
+        self.assertIn('from=2023-01-01&to=2026-10-02', mocked.call_args_list[0].args[0])
+        self.assertTrue(mocked.call_args_list[-1].args[0].endswith('page=3'))
+
+    def test_power_daily_requires_complete_dst_days_and_handles_resolution_change(self):
+        from datetime import timedelta
+        from zoneinfo import ZoneInfo
+        paris = ZoneInfo('Europe/Paris')
+        for day, hours in [(date(2024,3,31),23),(date(2024,10,27),25)]:
+            midnight = datetime.combine(day,datetime.min.time(),paris).astimezone(timezone.utc)
+            stamps = [int((midnight+timedelta(hours=h)).timestamp()) for h in range(hours)]
+            raw={'license_info':'CC BY 4.0 · SMARD','unit':'EUR/MWh',
+                 'unix_seconds':stamps,'price':[float(h) for h in range(hours)]}
+            result=parse_power_daily(json.dumps(raw).encode(),day,day)
+            self.assertEqual(result['points'],[{'date':day.isoformat(),'value':(hours-1)/2}])
+            raw['price'][10]=None
+            with self.assertRaisesRegex(ValueError,'complete'):
+                parse_power_daily(json.dumps(raw).encode(),day,day)
+        day=date(2026,10,2);midnight=datetime(2026,10,1,22,tzinfo=timezone.utc)
+        stamps=[int((midnight+timedelta(minutes=15*h)).timestamp()) for h in range(96)]
+        raw={'license_info':'CC BY 4.0','unit':'EUR/MWh','unix_seconds':stamps,'price':[100.0]*96}
+        self.assertEqual(parse_power_daily(json.dumps(raw).encode(),day,day)['points'][0]['value'],100)
+        # Hourly delivery before the switch must not become 15-minute coverage.
+        prior_midnight=midnight-timedelta(days=1)
+        hourly=[int((prior_midnight+timedelta(hours=h)).timestamp()) for h in range(24)]
+        raw['unix_seconds']=hourly+stamps;raw['price']=[80.0]*24+[100.0]*96
+        self.assertEqual(parse_power_daily(json.dumps(raw).encode(),day-timedelta(days=1),day)['points'],
+            [{'date':'2026-10-01','value':80.0},{'date':'2026-10-02','value':100.0}])
+        raw['license_info']='Private use'
+        with self.assertRaisesRegex(ValueError,'licence'):
+            parse_power_daily(json.dumps(raw).encode(),day,day)
+
+    def test_ttf_ngp_selects_current_gas_day_and_keeps_provisional_status(self):
+        now=datetime(2026,10,2,11,5,tzinfo=timezone.utc)
+        raw=('Gasday;IndexValue (€/MWh);Status;Timestamp Let\n'
+             '01/10/2026;72.501;Final NGP;02/10/2026 13:00\n'
+             '02/10/2026;74.080;Temporary NGP;02/10/2026 13:00\n'
+             '03/10/2026;72.702;Temporary NGP;02/10/2026 13:00\n').encode()
+        history=('Delivery date;Index Value (€/MWh)\n2026-10-01;72.501\n').encode()
+        result=parse_ttf_ngp(raw,history,now);item=result['metrics'][0]
+        self.assertEqual(item['value'],74.08)
+        self.assertEqual(item['quality'],'provisoire')
+        self.assertEqual(item['observed_at'],'2026-10-02T11:00:00+00:00')
+        with self.assertRaisesRegex(ValueError,'timestamp'):
+            parse_ttf_ngp(raw,history,datetime(2026,10,4,12,tzinfo=timezone.utc))
+
+    def test_ttf_monthly_conversion_uses_the_same_months_ecb_exchange_rate(self):
+        rows=[{'A':'Period','G':'Natural gas, Europe'},{'G':'($/mmbtu)'}]
+        months=[f'2025M{m:02d}' for m in range(9,13)]+[f'2026M{m:02d}' for m in range(1,9)]
+        rows += [{'A':m,'G':'10'} for m in months]
+        rates='FREQ,CURRENCY,CURRENCY_DENOM,TIME_PERIOD,OBS_VALUE\n'+''.join(
+            f'M,USD,EUR,{m[:4]}-{m[-2:]},1.25\n' for m in months)
+        with patch('scripts.update_data.xlsx_rows',return_value=rows):
+            result=parse_ttf_monthly(b'',rates.encode(),date(2026,10,2))
+            self.assertEqual(result['points'][-1]['value'],27.3)
+            self.assertEqual(result['points'][-1]['date'],'2026-08-01')
+            self.assertEqual(result['points'][-1]['usd_per_eur'],1.25)
+            with self.assertRaisesRegex(ValueError,'incomplete'):
+                parse_ttf_monthly(b'',rates.replace('USD,EUR','EUR,USD').encode(),date(2026,10,2))
 
     def test_one_year_oil_prices_are_dated_spot_history_with_missing_days_skipped(self):
         from datetime import timedelta

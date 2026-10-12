@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark"><title>Commodity Cockpit — Prix & fondamentaux</title>
+  <style>/*__STYLES__*/</style>
+</head>
+<body>
+  <a class="skip-link" href="#markets">Aller au contenu</a>
+  <header class="header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">C<span>↗</span></span><div><strong>Commodity Cockpit</strong><small>Prix & fondamentaux</small></div></div>
+    <nav class="nav" role="tablist" aria-label="Navigation">
+      <button type="button" role="tab" aria-controls="markets" data-page="markets" aria-selected="true">Marchés</button>
+      <button type="button" role="tab" aria-controls="physical" data-page="physical" aria-selected="false">Physique</button>
+      <button type="button" role="tab" aria-controls="power" data-page="power" aria-selected="false">Power FR</button>
+    </nav>
+    <div class="header-actions"><span class="header-clock" id="header-clock">Heure de Paris</span><button class="button subtle" type="button" id="export-data">Exporter CSV ↓</button></div>
+  </header>
+
+  <section class="page" id="markets">
+    <div class="market-shell">
+    <div class="market-intro"><div><div class="eyebrow">VUE D’ENSEMBLE</div><h1>Les prix. Les faits. Les prochains signaux.</h1><p>Du cours actuel aux facteurs d’offre et de demande, avec des sources datées.</p></div><div class="market-update"><span id="market-updated">Instantané embarqué</span><button type="button" id="market-refresh">Rafraîchir ↻</button></div></div>
+    <div class="section-title"><h2>Cotations en séance</h2><span class="status-dot">Fournisseur externe · instrument & délai affichés</span></div>
+    <div class="live-strip" id="live-strip" aria-label="Cotations en séance"></div>
+    <div class="live-caption">TradingView / OANDA · cours indicatifs. Les prix physiques publiés sont séparés ci-dessous.</div>
+    <div class="market-brief" id="market-brief" aria-label="Trois faits à surveiller"></div>
+    <main class="market-grid">
+      <section class="card chart">
+        <div class="bar"><h2 id="market-chart-title">Brent · indicatif OANDA</h2><a id="market-chart-link" href="https://www.tradingview.com/symbols/BCOUSD/?exchange=OANDA" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a></div>
+        <div class="chart-picks" id="chart-picks" aria-label="Choisir le graphique"></div>
+        <div class="chart-mode" aria-label="Source du graphique"><button type="button" class="active" id="chart-live-mode" aria-pressed="true">En séance</button><button type="button" id="chart-history-mode" aria-pressed="false">Historique publié</button><span id="chart-mode-note">Cotation indicative du fournisseur</span></div>
+        <div class="native-market-chart" id="market-native-chart" hidden></div>
+        <div class="widget" id="market-chart"><p class="empty">Chargement de TradingView…</p></div>
+        <div class="caption">Cours indicatif OANDA. L’historique publié permet de comparer les spots EIA si le widget est bloqué par le réseau.</div>
+      </section>
+      <aside class="right">
+        <section class="card watch">
+          <div class="bar"><h2>Repères publiés</h2><small>Source et date</small></div>
+          <div class="watch-list" id="watch-list"></div>
+          <div class="caption">Le spot EIA décrit le marché physique avec un délai de publication. Le NGP TTF est un indice spot pondéré.</div>
+        </section>
+        <section class="card calendar">
+          <div class="bar"><h2>Les prochains rendez-vous</h2><small>Heure de Paris</small></div>
+          <div class="agenda" id="agenda"></div>
+          <div class="release-list" id="release-list"><h3>Dernières publications vérifiées</h3></div>
+        </section>
+      </aside>
+    </main>
+    <div class="card market-power-pulse"><div><div class="eyebrow">POWER FR · REPÈRE DE MARCHÉ</div><h2>Électricité française</h2><p id="market-power-note">Prix day-ahead en attente.</p></div><div class="market-power-stats"><div><small>Livraison en cours</small><strong id="market-power-now">—</strong></div><div><small>Demain · moyenne</small><strong id="market-power-tomorrow">—</strong></div></div><a href="#power" data-open="power">Analyser ↗</a></div>
+    <section class="market-context"><h2>Gaz européen & GNL</h2><div class="price-links" id="gas-prices"></div><h2>Les fondamentaux à retenir · <a href="#physical" data-open="physical">comprendre ↗</a></h2><div class="mini-grid" id="mini-grid"></div></section>
+    </div>
+  </section>
+
+  <section class="page" id="physical" hidden>
+    <main class="workspace">
+      <div class="page-intro"><div><div class="eyebrow">OFFRE · DEMANDE · STOCKS</div><h1>Ce qui peut peser sur les prix.</h1><p>Les mesures, leur évolution et une lecture simple de chaque marché.</p></div><div><span class="stamp" id="updated">Chargement de l'instantané…</span> <button type="button" class="stamp" id="refresh-data">Actualiser les données ↻</button></div></div>
+      <details class="source-drawer"><summary id="source-summary">Qualité des sources & dernière collecte</summary><div class="source-status" id="source-status"></div></details>
+      <div class="filters" role="group" aria-label="Filtrer les matières premières">
+        <button type="button" class="active" data-sector="oil">Pétrole</button>
+        <button type="button" data-sector="gas">Gaz</button>
+        <button type="button" data-sector="agri">Agriculture</button>
+        <button type="button" data-sector="metals">Métaux</button>
+      </div>
+      <h2 class="section-heading">À comprendre en 10 secondes</h2>
+      <div class="signal-grid" id="signals"></div>
+      <div class="physical-layout">
+          <section><h2 class="section-heading" id="sector-heading">Pétrole · prix spot et stocks</h2><div class="chart-duo"><div class="card side-pad trend" id="trend" hidden><h3 id="trend-title">Stocks commerciaux de brut US · 26 semaines</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Évolution des stocks ou flux physiques"><polyline id="trend-line" points=""></polyline></svg><div class="axis"><span id="trend-start"></span><span id="trend-end"></span></div></div><div class="card side-pad trend" id="trend-two" hidden><h3 id="trend-two-title">Deuxième repère</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Historique du deuxième repère"><polyline id="trend-two-line" points=""></polyline></svg><div class="axis"><span id="trend-two-start"></span><span id="trend-two-end"></span></div></div></div><div id="comparison-chart" class="card side-pad trend" hidden></div><div id="sector-visuals" class="sector-visuals"></div><div id="seasonal-physical" class="seasonal-stack"></div><div id="sector-context" class="context-note"></div><h2 class="section-heading" style="margin-top:16px">Dernières mesures officielles</h2><div id="metrics"></div></section>
+        <aside class="physical-side">
+          <section class="card side-pad" id="takeaways"><h3>Ce que disent les publications</h3><div id="takeaway-list"></div></section>
+          <section class="card side-pad"><h3>Publications & contexte · EIA</h3><p>Pétrole et gaz · titres datés, contexte à confronter aux prix.</p><div id="stories"></div></section>
+          <details class="card side-pad"><summary>Lire les stocks et les flux</summary><p>GIE AGSI+ : stocks de gaz France et UE. GIE ALSI : GNL dans les terminaux et émission en GWh/j. <a href="https://transparency.entsog.eu/" target="_blank" rel="noopener noreferrer">ENTSOG ↗</a> donne les flux de réseau. Un stock et un débit ne se comparent pas directement. Les signaux montrent une pression possible toutes choses égales par ailleurs ; ils ne mesurent pas une variation instantanée du TTF, du PEG ou du JKM.</p></details>
+        </aside>
+      </div>
+    </main>
+  </section>
+
+  <section class="page" id="power" hidden>
+    <main class="workspace">
+      <div class="page-intro power-intro"><div><div class="eyebrow">POWER INTELLIGENCE · FRANCE</div><h1>Le marché électrique, en clair.</h1><p>Prix de livraison, écarts européens et facteurs physiques à surveiller.</p></div><div class="power-actions"><span class="stamp" id="power-updated">Instantané en attente</span><button type="button" class="stamp" id="power-refresh">Rafraîchir ↻</button></div></div>
+      <div class="power-head"><span class="badge" id="power-price-status">Prix : vérification en cours</span><span class="badge" id="power-rte-status">RTE : collecte en attente</span><span class="badge" id="power-entsoe-status">ENTSO-E : collecte en attente</span></div>
+      <section class="power-lead" aria-label="Tableau de bord des prix">
+        <div class="card power-hero"><div class="eyebrow">FRANCE · DAY-AHEAD · CRÉNEAU LIVRÉ</div><strong id="power-now-value">—</strong><div class="power-unit">€/MWh</div><div id="power-now-delivery" class="power-hero-time">Période de livraison en attente</div><div id="power-now-delta" class="power-hero-delta">Prix fixé lors de l’enchère de la veille.</div></div>
+        <div class="price-grid" id="power-price-grid"></div>
+      </section>
+      <section class="card power-brief"><div class="power-section-header"><div><div class="eyebrow">SYNTHÈSE</div><h2>Ce qui change sur le marché</h2></div><span class="badge">Lecture calculée</span></div><p id="power-market-takeaway">Lecture des prix en cours…</p><div id="power-market-evidence" class="power-brief-sub"></div></section>
+      <div class="power-alerts" id="power-alert-list" aria-label="Repères de marché calculés"></div>
+      <div class="power-analysis-layout">
+        <section class="card power-history-panel" id="power-prices-panel">
+          <div class="power-section-header"><div><div class="eyebrow">MARCHÉ DE GROS</div><h2>France vs DE-LU · enchère day-ahead</h2></div><span class="power-legend-inline"><i></i> France <i></i> DE-LU</span></div>
+          <p>Chaque point est le prix fixé la veille pour un créneau de livraison. L’échelle est commune aux deux marchés.</p>
+          <div class="power-controls" id="power-price-span" aria-label="Période des prix"></div>
+          <div class="power-price-chart" id="power-price-chart"><span class="empty">Collecte des prix en attente.</span></div>
+          <div class="power-meta" id="power-price-meta"></div>
+          <div id="power-price-hours" class="power-hours"></div>
+          <p class="power-source"><a href="https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=FR" target="_blank" rel="noopener noreferrer">Fraunhofer ISE Energy-Charts ↗</a> · <span id="power-price-license">Licence vérifiée dans la réponse source.</span> Graphique et indicateurs recalculés ici.</p>
+        </section>
+        <aside class="power-insights">
+          <section class="card power-insight-card"><div class="eyebrow">LECTURE DES FACTEURS</div><h2>Pourquoi surveiller ces prix ?</h2><p>Les écarts ci-dessous sont des observations physiques. Ils éclairent le marché sans attribuer à eux seuls une variation de prix.</p><div id="power-driver-list"></div><p id="power-price-context"></p></section>
+          <section class="card power-insight-card"><div class="eyebrow">AUTRE MARCHÉ</div><h2>Intraday · France</h2><p class="power-intraday-empty">Prix ID1 / ID3 indisponible dans le cockpit</p><p>Flux sous licence non connecté. Le day-ahead et l’équilibrage RTE sont des marchés différents.</p><a href="https://www.epexspot.com/en/market-results" target="_blank" rel="noopener noreferrer">Consulter les résultats EPEX ↗</a></section>
+        </aside>
+      </div>
+      <section id="power-seasonal" class="card seasonal-panel"></section>
+      <details class="card power-history-panel"><summary>Comment lire les variations de prix</summary><p id="power-price-reading"></p><p>Une hausse du prix day-ahead de demain reflète l’enchère pour demain. Les mesures RTE ci-dessous décrivent des heures déjà écoulées ; les comparer permet de formuler des hypothèses, pas de prouver la cause d’un prix futur.</p></details>
+      <h2 class="power-chapter">Le système physique · observations RTE</h2>
+      <div class="power-grid" id="power-grid"></div>
+      <div class="power-layout">
+        <section class="card"><h2>Demande et résiduelle · 24 h</h2><p>Résiduelle indicative = consommation − éolien − solaire. Une valeur plus élevée peut solliciter des moyens pilotables.</p><div id="power-curve" class="empty">Collecte RTE en attente.</div><div class="power-legend" id="power-axis"></div></section>
+        <section class="card"><h2>Production française · dernière observation</h2><p>Puissance par filière en MW. L’échelle des barres montre la part de la production affichée.</p><div id="power-mix" class="empty">Collecte RTE en attente.</div><small id="power-mix-time" class="detail"></small></section>
+      </div>
+      <section class="card power-history-panel"><div class="power-section-header"><div><div class="eyebrow">HISTORIQUE PHYSIQUE</div><h2>RTE · demande, gaz, renouvelables et échanges</h2></div></div><p>Observations horaires accumulées sans compléter les trous. « 1 an » affiche la période réellement collectée.</p><div class="power-controls" id="power-span" aria-label="Période du graphique"></div><div class="power-controls" id="power-series" aria-label="Mesure du graphique"></div><div class="power-history-chart" id="power-history-chart"><span class="empty">Historique RTE en attente.</span></div><div class="power-meta" id="power-history-meta"></div><p id="power-history-reading"></p></section>
+      <div class="power-bottom">
+        <section class="card"><h2>Pour surveiller le gaz et les échanges</h2><p id="power-readout">Le gaz électrique, l'éolien, le solaire et le solde d'import/export seront affichés après la première collecte RTE.</p><p>Un solde RTE négatif signifie une exportation nette ; positif, une importation nette. Les données sont des télémesures complétées d'estimations.</p><a href="https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/" target="_blank" rel="noopener noreferrer">Source RTE éCO2mix ↗</a></section>
+        <section class="card"><h2>Demande anticipée · France et DE-LU</h2><p>Point haut prévu dans les prochaines 24 h, prévision day-ahead ENTSO-E sous licence CC BY 4.0. Chaque marché a sa taille : comparer la trajectoire, pas les niveaux bruts.</p><div class="power-forecast" id="power-forecast"></div><p id="power-forecast-note"></p><a href="https://transparency.entsoe.eu/" target="_blank" rel="noopener noreferrer">Transparence ENTSO-E ↗</a></section>
+        <details class="card"><summary>Day-ahead, intraday et équilibrage</summary><p>Prix day-ahead : enchère de la veille. Intraday continu : échanges ultérieurs du même créneau, avec indices ID1 / ID3. Prix d’équilibrage : règlement d’un mécanisme différent. Un spread exige des valeurs comparables et datées.</p><a href="https://www.epexspot.com/en/indices" target="_blank" rel="noopener noreferrer">Définitions EPEX ↗</a> · <a href="https://transparency.entsoe.eu/" target="_blank" rel="noopener noreferrer">Transparence ENTSO-E ↗</a></details>
+        <details class="card"><summary>Méthode et qualité des mesures</summary><p><b>Observé provisoire</b> : RTE éCO2mix, dernier relevé de chaque heure UTC. <b>Calculé</b> : demande résiduelle = consommation − éolien − solaire ; ce calcul ne représente pas le dispatch réel d'une centrale ni un prix. Les trous de collecte restent visibles dans la courbe.</p><p>La couverture réelle, la date de mesure et l'heure de collecte sont affichées. Le fichier HTML embarque l'historique ; « Actualiser les données » le synchronise depuis GitHub si le réseau le permet.</p><p>Les jetons ENTSO-E et GIE restent dans les secrets GitHub.</p></details>
+      </div>
+    </main>
+  </section>
+
+<footer class="footer"><span>Commodity Cockpit · faits datés, interprétations conditionnelles.</span><details><summary>Sources, méthode & fréquence</summary><p>EIA · GIE · USDA · USGS · RTE · ENTSO-E · Energy-Charts · Banque mondiale / BCE. Les widgets TradingView suivent leur propre délai. La collecte officielle tourne toutes les deux heures ; Power tente aussi une lecture directe. Hors connexion, l’instantané reste daté.</p><a href="https://github.com/TheoTaillandier/Test2/blob/main/methodology.md" target="_blank" rel="noopener noreferrer">Méthodologie complète ↗</a></details></footer>
+
+  <script id="snapshot-data" type="application/json">__SNAPSHOT__</script>
+  <script id="power-history-data" type="application/json">__POWER_HISTORY__</script>
+  <script id="power-price-data" type="application/json">__POWER_PRICES__</script>
+  <script>/*__APP__*/</script>
+</body>
+</html>

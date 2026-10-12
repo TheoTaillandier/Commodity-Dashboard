@@ -17,3 +17,13 @@
 
 ## Format à ajouter après chaque passage
 Date/heure Europe/Paris ; commit de départ ; constats nouveaux ; décision ; fichiers modifiés ; tests et résultat ; commit publié et workflow vérifié ; limite restante ; prochaine priorité. Rester concis et distinguer réalisation confirmée de proposition.
+
+
+## 2026-10-12 — Refonte des trois pages (validation sur branche)
+- Départ : main 4835fc13e27b0ad15622ab3db8e5241319610b2f. Instantané récent conservé, sans lecture des clés.
+- Marchés : cours compacts, trois faits prioritaires, calendrier et repères séparés, historique natif hors connexion, cartes gaz datées et export CSV.
+- Physique : tableaux avec commentaires concis, graphiques avec axes et survol, comparaison annuelle Brent/stockage/TTF, avancement de récolte face à la moyenne cinq ans. Métaux : facteurs à surveiller distincts des chiffres annuels USGS.
+- Power : présentation harmonisée, comparaison des quatre années, méthodes repliées ; aucun faux intraday.
+- Structure : app/template.html, app/styles.css, app/cockpit.js → compilateur Python → HTML autonome. README séparé du code complet pour empêcher la copie de documentation dans le HTML.
+- Sources : correctif des pages Crop Progress ; pagination GIE complète ; NGP EEX sous condition de droits explicites après vérification des conditions officielles.
+- Vérifications locales : tests Python et syntaxe JS passent. Vérification du rendu Chromium et des collectes à confirmer dans les workflows avant publication finale.

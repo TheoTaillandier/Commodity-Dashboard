@@ -1,0 +1,44 @@
+name: Vérifier l’interface du cockpit
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/validate-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Vérifier les données et compiler le HTML autonome
+        run: |
+          python -m unittest discover -s tests -v
+          python scripts/build_dashboard.py
+          node --check app/cockpit.js
+      - name: Installer le navigateur de vérification
+        run: |
+          npm install --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Contrôler desktop, mobile et mode hors connexion
+        run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cockpit-ui-report
+          path: ui-report/
+          retention-days: 7
