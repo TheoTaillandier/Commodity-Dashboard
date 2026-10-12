@@ -40,3 +40,10 @@ Documenter URL officielle, produit exact, unité, fréquence, observation/public
 - NGP EEX : accès public confirmé, mais republication systématique restreinte. Collecte désormais désactivée par défaut ; condition explicite de droits. Le TTF mensuel Banque mondiale/BCE reste affiché avec sa fréquence.
 - Crop Progress : le rapport officiel du 5 octobre existe à https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt. Collecte corrigée pour examiner les pages de publication datées et garder la plus récente réponse valide.
 - Historiques longs : archive préparée le 2 octobre conservée séparément ; fusion par date avec priorité aux observations récentes. Le workflow doit confirmer le nouveau chargement complet GIE avant de présenter 2023/2024 comme reçues.
+
+## Couverture livrée le 12 octobre 2026
+- France/UE AGSI : 1379 observations par région, du 1er janvier 2023 au 10 octobre 2026. Les quatre courbes annuelles sont réellement disponibles.
+- Brent/WTI : 951/937 observations quotidiennes depuis 2023, dernière date 6 octobre 2026.
+- Power FR : 1381 moyennes quotidiennes de journées complètes depuis 2023 jusqu’au 12 octobre 2026 ; prix FR/DE-LU de demain reçus. Licence CC BY 4.0 contrôlée. RTE a livré une mesure du 12 octobre 14:15 UTC.
+- Banque mondiale/BCE : 45 moyennes mensuelles TTF 2023–septembre 2026 ; ce sont des niveaux mensuels, explicitement séparés d’un cours en séance.
+- USDA Crop Progress 5 octobre : les comparaisons N−1 sont absentes (« NA »). Le parseur doit conserver les valeurs actuelles sans inventer la comparaison. La semaine mesurée est le 4 octobre ; publication le 5. Aucun report de la comparaison N−1 du rapport précédent sur ce nouveau rapport.

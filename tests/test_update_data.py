@@ -400,6 +400,37 @@ Cotton Bolls Opening - Selected States'''
         self.assertTrue(any(e['title'].startswith('USDA') and
                             e['at'] == '2026-10-09T16:00:00+00:00' for e in events))
 
+    def test_crop_report_keeps_current_values_when_prior_year_is_na(self):
+        sample = b'''Released October 5, 2026, by NASS.
+Corn Harvested - Selected States
+18 States ......: (NA) 18 23 27
+Corn Condition - Selected States: Week Ending October 4, 2026
+18 States ......: 6 12 28 42 12
+Previous year ..: (NA) (NA) (NA) (NA) (NA)
+Soybeans Harvested - Selected States
+18 States ......: (NA) 17 25 33
+Soybean Condition - Selected States: Week Ending October 4, 2026
+18 States ......: 4 10 29 46 11
+Previous year ..: (NA) (NA) (NA) (NA) (NA)
+Cotton Bolls Opening - Selected States'''
+        parsed = parse_crop_progress(sample, 'https://esmis.nal.usda.gov/report.txt', date(2026,10,12))
+        metrics = {item['id']:item for item in parsed['metrics']}
+        self.assertEqual(parsed['as_of'], '2026-10-04')
+        self.assertEqual(parsed['published'], '2026-10-05')
+        self.assertEqual(metrics['ag_corn_condition']['value'], 54)
+        self.assertIsNone(metrics['ag_corn_condition']['change'])
+        self.assertEqual(metrics['ag_corn_harvest']['change'], -4)
+        self.assertEqual(metrics['ag_soy_harvest']['change'], -8)
+        self.assertIn('N−1 non publié', metrics['ag_soy_harvest']['detail'])
+
+    def test_older_report_cannot_overwrite_the_latest_valid_commodity_value(self):
+        previous = {'metrics': [{'id':'ag_corn_stocks','sector':'agri','value':1849,'as_of':'2026-10'}],
+                    'sources': {'wasde': {'as_of':'2026-10','status':'ok'}}, 'history':{},'stories':[]}
+        older = {'as_of':'2026-09','metrics':[{'id':'ag_corn_stocks','value':1567,'sector':'agri'}]}
+        snapshot = build_snapshot(previous, {'wasde':older}, datetime(2026,10,12,tzinfo=timezone.utc))
+        self.assertEqual(next(m for m in snapshot['metrics'] if m['id']=='ag_corn_stocks')['value'],1849)
+        self.assertEqual(snapshot['sources']['wasde']['status'],'error')
+
     def test_ngp_republication_is_disabled_without_an_explicit_rights_flag(self):
         for value in ('', 'false', '1', 'yes'):
             with patch.dict('os.environ', {'EEX_NGP_REDISTRIBUTION_ALLOWED': value}):

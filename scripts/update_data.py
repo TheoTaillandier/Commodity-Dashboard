@@ -22,7 +22,7 @@ import re
 import sys
 from threading import Lock
 from time import monotonic, sleep
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, urljoin
 import xml.etree.ElementTree as ET
@@ -706,38 +706,53 @@ def parse_crop_progress(raw: bytes, url: str, today: date) -> dict:
     release = re.search(r"Released ([A-Za-z]+ \d{1,2}, 20\d{2})", text)
     if not release:
         raise ValueError("USDA crop progress date missing")
-    observed = datetime.strptime(release.group(1), "%B %d, %Y").date()
-    if not timedelta(0) <= today - observed <= timedelta(days=20):
+    published = datetime.strptime(release.group(1), "%B %d, %Y").date()
+    if not timedelta(0) <= today - published <= timedelta(days=20):
         raise ValueError("USDA crop progress report stale")
+    week = re.search(r"Week Ending ([A-Za-z]+ \d{1,2}, 20\d{2})", text)
+    if not week:
+        raise ValueError("USDA observation week missing")
+    observed = datetime.strptime(week.group(1), "%B %d, %Y").date()
+    if not timedelta(0) <= published - observed <= timedelta(days=3):
+        raise ValueError("USDA measurement/publication dates inconsistent")
+
+    def fields(row):
+        return [None if value == "(NA)" else 0 if value == "-" else int(value)
+                for value in re.findall(r"\(NA\)|\d+|-", row)]
+
     result = []
     for crop, label, prefix in (("Corn", "Maïs US", "corn"), ("Soybean", "Soja US", "soy")):
-        condition = re.search(rf"{crop} Condition - Selected States:.*?(?=\n\s*{crop}s? [A-Z]|\n\s*Cotton )", text, re.S)
+        condition = re.search(rf"{crop} Condition - Selected States:.*?(?=\n\s*(?:Corn|Soybeans?|Cotton) [A-Z]|\Z)", text, re.S)
         if condition:
-            section = condition.group()
-            current = re.search(r"18 States\s*\.{2,}:\s*([\d\s-]+)", section)
-            year = re.search(r"Previous year\s*\.{2,}:\s*([\d\s-]+)", section)
-            if current and year:
-                current_parts = [int(x) for x in re.findall(r"\d+", current.group(1))]
-                year_parts = [int(x) for x in re.findall(r"\d+", year.group(1))]
-                if len(current_parts) == len(year_parts) == 5 and sum(current_parts) == sum(year_parts) == 100:
-                    value, comparison = sum(current_parts[-2:]), sum(year_parts[-2:])
-                    result.append(metric("ag_"+prefix+"_condition", "agri", label+" · bon/excellent",
-                                         value, "%", value-comparison, "vs même date N−1",
-                                         observed.isoformat(), "USDA NASS Crop Progress", url,
-                                         "Part des cultures jugées bonnes ou excellentes · 18 États majeurs"))
-        harvest = re.search(rf"{crop}s? Harvested - Selected States(.*?)(?=\n\s*{crop} Condition|\n\s*Corn Condition|\n\s*Soybean Condition)", text, re.S)
+            current = re.search(r"18 States\s*\.{2,}:([^\n]+)", condition.group())
+            previous = re.search(r"Previous year\s*\.{2,}:([^\n]+)", condition.group())
+            current_parts = fields(current.group(1)) if current else []
+            old_parts = fields(previous.group(1)) if previous else []
+            if len(current_parts) == 5 and all(v is not None for v in current_parts) and sum(current_parts) == 100:
+                value = sum(current_parts[-2:])
+                known = len(old_parts) == 5 and all(v is not None for v in old_parts) and sum(old_parts) == 100
+                difference = value - sum(old_parts[-2:]) if known else None
+                result.append(metric("ag_"+prefix+"_condition", "agri", label+" · bon/excellent",
+                                     value, "%", difference, "vs même date N−1" if known else "N−1 non publié",
+                                     observed.isoformat(), "USDA NASS Crop Progress", url,
+                                     "Part bonne/excellente · 18 États majeurs" + ("" if known else " · comparaison N−1 indisponible dans le rapport")))
+        harvest = re.search(rf"{crop}s? Harvested - Selected States(.*?)(?=\n\s*(?:Corn|Soybean) Condition|\Z)", text, re.S)
         if harvest:
-            row = re.search(r"18 States\s*\.{2,}:\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", harvest.group(1))
-            if row:
-                old, previous, current, average = map(int, row.groups())
-                if all(0 <= x <= 100 for x in (old, previous, current, average)):
+            row = re.search(r"18 States\s*\.{2,}:([^\n]+)", harvest.group(1))
+            parts = fields(row.group(1)) if row else []
+            if len(parts) == 4:
+                old, previous, current, average = parts
+                if current is not None and 0 <= current <= 100 and (average is None or 0 <= average <= 100):
+                    detail = (f"{old} % à la même date N−1" if old is not None else "N−1 non publié")
+                    if previous is not None:
+                        detail += f" · {previous} % semaine précédente"
                     result.append(metric("ag_"+prefix+"_harvest", "agri", label+" · récolté",
-                                         current, "%", current-average, "vs moyenne 5 ans",
-                                         observed.isoformat(), "USDA NASS Crop Progress", url,
-                                         f"{old} % à la même date N−1 · {previous} % semaine précédente"))
+                                         current, "%", current-average if average is not None else None,
+                                         "vs moyenne 5 ans" if average is not None else "moyenne 5 ans non publiée",
+                                         observed.isoformat(), "USDA NASS Crop Progress", url, detail))
     if len(result) < 2:
         raise ValueError("USDA crop report national tables missing")
-    return {"metrics": result, "as_of": observed.isoformat(), "url": url}
+    return {"metrics": result, "as_of": observed.isoformat(), "published": published.isoformat(), "url": url}
 
 
 def fetch_crop_progress(today: date) -> dict:
@@ -753,7 +768,7 @@ def fetch_crop_progress(today: date) -> dict:
             url = crop_progress_link(fetch(page))
             report = parse_crop_progress(fetch(url), url, today)
             reports.append(report)
-            if date.fromisoformat(report["as_of"]) >= monday - timedelta(days=7):
+            if date.fromisoformat(report["published"]) >= monday - timedelta(days=7):
                 break
         except (OSError, ValueError):
             continue
@@ -873,7 +888,13 @@ def fetch_wasde(today: date) -> dict:
             year -= 1
         url = f"https://www.usda.gov/oce/commodity/wasde/wasde{month:02d}{year % 100:02d}.txt"
         try:
-            return parse_wasde(fetch(url), url)
+            for attempt in range(2):
+                try:
+                    return parse_wasde(fetch(url), url)
+                except URLError as error:
+                    if isinstance(error, HTTPError) or attempt == 1:
+                        raise
+                    sleep(1)
         except HTTPError as error:
             if error.code == 404:
                 continue
@@ -1207,6 +1228,12 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
                 sources[key] = {"status": "needs_key", "url": ENTSOE_REPORT_URL,
                                 "message": "Clé ENTSO-E requise pour la prévision J-1."}
                 values.pop("power_forecast_" + key[-2:], None)
+            continue
+        old_period = sources.get(key, {}).get("as_of")
+        new_period = result.get("as_of")
+        if old_period and new_period and len(old_period) == len(new_period) and new_period < old_period:
+            sources[key] = {**sources[key], "status": "error", "checked_at": now.isoformat(),
+                            "message": "Réponse antérieure à la dernière publication ; valeur récente conservée."}
             continue
         sources[key] = {"status": "ok", "as_of": result.get("as_of"),
                         "url": result.get("url", NEWS_URL), "checked_at": now.isoformat()}
