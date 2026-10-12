@@ -183,7 +183,7 @@
       "url": "https://ir.eia.gov/ngs/schedule.html"
     }
   ],
-  "generated_at": "2026-10-12T14:32:01+00:00",
+  "generated_at": "2026-10-12T14:39:09+00:00",
   "history": {
     "gas_eu": [
       {
@@ -27108,56 +27108,56 @@
       "value": 64068
     },
     {
-      "as_of": "2026-09-28",
-      "change": -9,
-      "comparison": "vs même date N−1",
-      "detail": "Part des cultures jugées bonnes ou excellentes · 18 États majeurs",
+      "as_of": "2026-10-04",
+      "change": null,
+      "comparison": "N−1 non publié",
+      "detail": "Part bonne/excellente · 18 États majeurs · comparaison N−1 indisponible dans le rapport",
       "id": "ag_corn_condition",
       "label": "Maïs US · bon/excellent",
       "sector": "agri",
       "source": "USDA NASS Crop Progress",
       "unit": "%",
-      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796082/prog3926.txt",
-      "value": 57
+      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt",
+      "value": 54
     },
     {
-      "as_of": "2026-09-28",
-      "change": 0,
+      "as_of": "2026-10-04",
+      "change": -4,
       "comparison": "vs moyenne 5 ans",
-      "detail": "17 % à la même date N−1 · 13 % semaine précédente",
+      "detail": "N−1 non publié · 18 % semaine précédente",
       "id": "ag_corn_harvest",
       "label": "Maïs US · récolté",
       "sector": "agri",
       "source": "USDA NASS Crop Progress",
       "unit": "%",
-      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796082/prog3926.txt",
-      "value": 18
+      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt",
+      "value": 23
     },
     {
-      "as_of": "2026-09-28",
-      "change": -4,
-      "comparison": "vs même date N−1",
-      "detail": "Part des cultures jugées bonnes ou excellentes · 18 États majeurs",
+      "as_of": "2026-10-04",
+      "change": null,
+      "comparison": "N−1 non publié",
+      "detail": "Part bonne/excellente · 18 États majeurs · comparaison N−1 indisponible dans le rapport",
       "id": "ag_soy_condition",
       "label": "Soja US · bon/excellent",
       "sector": "agri",
       "source": "USDA NASS Crop Progress",
       "unit": "%",
-      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796082/prog3926.txt",
-      "value": 58
+      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt",
+      "value": 57
     },
     {
-      "as_of": "2026-09-28",
-      "change": 0,
+      "as_of": "2026-10-04",
+      "change": -8,
       "comparison": "vs moyenne 5 ans",
-      "detail": "18 % à la même date N−1 · 12 % semaine précédente",
+      "detail": "N−1 non publié · 17 % semaine précédente",
       "id": "ag_soy_harvest",
       "label": "Soja US · récolté",
       "sector": "agri",
       "source": "USDA NASS Crop Progress",
       "unit": "%",
-      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796082/prog3926.txt",
-      "value": 17
+      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt",
+      "value": 25
     },
     {
       "as_of": "2025",
@@ -27177,62 +27177,62 @@
   "sources": {
     "alsi": {
       "as_of": "2026-10-10",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://alsi.gie.eu/"
     },
     "alsi_fr": {
       "as_of": "2026-10-10",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://alsi.gie.eu/"
     },
     "brent": {
       "as_of": "2026-10-06",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm"
     },
     "crop_progress": {
-      "as_of": "2026-09-28",
-      "checked_at": "2026-10-12T14:32:01+00:00",
-      "message": "Dernière donnée conservée ; source indisponible.",
-      "status": "error",
-      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796082/prog3926.txt"
+      "as_of": "2026-10-04",
+      "checked_at": "2026-10-12T14:39:09+00:00",
+      "published": "2026-10-05",
+      "status": "ok",
+      "url": "https://esmis.nal.usda.gov/sites/default/release-files/796095/prog4026.txt"
     },
     "entsoe_de": {
       "as_of": "2026-10-13T09:45:00+00:00",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://transparency.entsoe.eu/"
     },
     "entsoe_fr": {
       "as_of": "2026-10-12T17:30:00+00:00",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://transparency.entsoe.eu/"
     },
     "gas": {
       "as_of": "2026-10-02",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://ir.eia.gov/ngs/ngs.html"
     },
     "gie": {
       "as_of": "2026-10-10",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://agsi.gie.eu/"
     },
     "gie_fr": {
       "as_of": "2026-10-10",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://agsi.gie.eu/"
     },
     "henry": {
       "as_of": "2026-10-06",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/dnav/ng/NG_PRI_FUT_S1_D.htm"
     },
@@ -27243,7 +27243,7 @@
     },
     "news": {
       "as_of": "2026-10-07",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/rss/todayinenergy.xml"
     },
@@ -27255,33 +27255,33 @@
     },
     "oil": {
       "as_of": "2026-10-02",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_flows": {
       "as_of": "2026-10-02",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_history": {
       "as_of": "2026-10-02",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "published": "2026-10-07",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_price_history": {
       "as_of": "2026-10-06",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "provenance": "EIA · miroir datasets/oil-prices",
       "status": "ok",
       "url": "https://github.com/datasets/oil-prices"
     },
     "power_price_de": {
       "as_of": "2026-10-13T21:45:00+00:00",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
@@ -27289,7 +27289,7 @@
     },
     "power_price_fr": {
       "as_of": "2026-10-13T21:45:00+00:00",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
@@ -27297,7 +27297,7 @@
     },
     "power_seasonal": {
       "as_of": "2026-10-12",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Moyenne quotidienne pondérée par durée · Fraunhofer / SMARD",
       "status": "ok",
@@ -27305,34 +27305,34 @@
     },
     "rte_power": {
       "as_of": "2026-10-12T14:15:00+00:00",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/"
     },
     "ttf_monthly": {
       "as_of": "2026-09",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "licence": "Banque mondiale · conditions des jeux de données ; attribution BCE pour le change",
       "provenance": "TTF · moyenne mensuelle Banque mondiale · conversion BCE EUR/MWh",
       "status": "ok",
       "url": "https://www.worldbank.org/en/research/commodity-markets"
     },
     "ttf_ngp": {
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "message": "Cours spot sous licence non connecté ; aucun cours de substitution.",
       "status": "needs_licence",
       "url": "https://www.eex.com/en/market-data/licensing-policies"
     },
     "wasde": {
       "as_of": "2026-10",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "message": "Dernière donnée conservée ; source indisponible.",
       "status": "error",
       "url": "https://www.usda.gov/oce/commodity/wasde/wasde1026.txt"
     },
     "wti": {
       "as_of": "2026-10-06",
-      "checked_at": "2026-10-12T14:32:01+00:00",
+      "checked_at": "2026-10-12T14:39:09+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm"
     }
