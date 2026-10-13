@@ -22,28 +22,31 @@ const assert=require('node:assert/strict');
     await page.goto(url,{waitUntil:'domcontentloaded'});
     const quoteReports=[];
     await page.waitForTimeout(12000);
+    const quoteSession=await page.context().newCDPSession(page);
+    await quoteSession.send('Accessibility.enable');
+    const {frameTree}=await quoteSession.send('Page.getFrameTree');
+    const frames=[];
+    function collectFrames(tree){frames.push(tree.frame);for(const child of tree.childFrames||[])collectFrames(child);}
+    collectFrames(frameTree);
     for(const tile of await page.locator('#live-strip .live-tile').all()){
       const symbol=await tile.getAttribute('data-symbol');
       if(!['OANDA:WHEATUSD','OANDA:CORNUSD','CAPITALCOM:COFFEE','CAPITALCOM:COCOA','CAPITALCOM:ALUMINUM'].includes(symbol))continue;
       // Provider frames inside closed shadow roots are absent from tile
       // locators. Read their rendered accessibility tree through Chromium.
       const texts=[];
-      for(const frame of page.frames()){
-        let frameURL=frame.url();
+      for(const frame of frames){
+        let frameURL=frame.url;
         try{frameURL=decodeURIComponent(frameURL);}catch{}
         if(!frameURL.includes('single-quote')||!frameURL.includes(symbol))continue;
-        const session=await page.context().newCDPSession(frame);
-        try{
-          await session.send('Accessibility.enable');
-          const tree=await session.send('Accessibility.getFullAXTree');
-          texts.push(...tree.nodes.filter(node=>!node.ignored&&node.name?.value).map(node=>node.name.value));
-        }finally{await session.detach();}
+        const tree=await quoteSession.send('Accessibility.getFullAXTree',{frameId:frame.id});
+        texts.push(...tree.nodes.filter(node=>!node.ignored&&node.name?.value).map(node=>node.name.value));
       }
       const body=texts.map(text=>text.trim()).filter(Boolean).join('\n');
       const refused=/only available|not supported|not available|uniquement sur TradingView|symbole n.existe pas/i.test(body);
       const hasPrice=body.split('\n').some(text=>/^[+-]?\d[\d\s.,]*$/.test(text.trim()));
       quoteReports.push({symbol,body,refused,hasPrice});
     }
+    await quoteSession.detach();
     await fs.writeFile('ui-report/live-quotes.json',JSON.stringify(quoteReports,null,2));
     await page.locator('#live-strip').screenshot({path:'ui-report/live-quotes-desktop.png'});
     console.log('LIVE QUOTES: '+JSON.stringify(quoteReports));
