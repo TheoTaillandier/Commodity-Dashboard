@@ -35,7 +35,8 @@ const assert=require('node:assert/strict');
       // locators. Read their rendered accessibility tree through Chromium.
       const texts=[];
       for(const frame of frames){
-        let frameURL=frame.url;
+        // CDP exposes the widget's JSON configuration separately as a fragment.
+        let frameURL=frame.url+(frame.urlFragment||'');
         try{frameURL=decodeURIComponent(frameURL);}catch{}
         if(!frameURL.includes('single-quote')||!frameURL.includes(symbol))continue;
         const tree=await quoteSession.send('Accessibility.getFullAXTree',{frameId:frame.id});
