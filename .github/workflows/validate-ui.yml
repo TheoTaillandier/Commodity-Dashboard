@@ -37,6 +37,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Contrôler desktop, mobile et mode hors connexion
         run: npm run test:ui
+      - name: Observer les accès réels aux widgets du fournisseur
+        run: node tests/check_live_widgets.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
