@@ -25,12 +25,19 @@ const assert=require('node:assert/strict');
     for(const tile of await page.locator('#live-strip .live-tile').all()){
       const symbol=await tile.getAttribute('data-symbol');
       if(!['OANDA:WHEATUSD','OANDA:CORNUSD','CAPITALCOM:COFFEE','CAPITALCOM:COCOA','CAPITALCOM:ALUMINUM'].includes(symbol))continue;
-      // Single Quote may render as an open-shadow web component while a
-      // separate empty iframe is present. Read visible elements in both forms.
-      const texts=await tile.locator('*:visible').allTextContents();
-      for(const iframe of await tile.locator('iframe').all()){
-        const frame=await (await iframe.elementHandle()).contentFrame();
-        if(frame)texts.push(...await frame.locator('body *:visible').allTextContents());
+      // Provider frames inside closed shadow roots are absent from tile
+      // locators. Read their rendered accessibility tree through Chromium.
+      const texts=[];
+      for(const frame of page.frames()){
+        let frameURL=frame.url();
+        try{frameURL=decodeURIComponent(frameURL);}catch{}
+        if(!frameURL.includes('single-quote')||!frameURL.includes(symbol))continue;
+        const session=await page.context().newCDPSession(frame);
+        try{
+          await session.send('Accessibility.enable');
+          const tree=await session.send('Accessibility.getFullAXTree');
+          texts.push(...tree.nodes.filter(node=>!node.ignored&&node.name?.value).map(node=>node.name.value));
+        }finally{await session.detach();}
       }
       const body=texts.map(text=>text.trim()).filter(Boolean).join('\n');
       const refused=/only available|not supported|not available|uniquement sur TradingView|symbole n.existe pas/i.test(body);
