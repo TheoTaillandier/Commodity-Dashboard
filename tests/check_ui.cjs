@@ -22,6 +22,16 @@ const http=require('node:http');
       // retain the actual embedded data and exercise the visible fallback.
       await page.route('**/*',route=>route.request().url().startsWith(url)?route.continue():route.abort());
       await page.goto(url,{waitUntil:'domcontentloaded'});
+      assert.equal(await page.locator('#live-strip .live-tile').count(),10,'Five original quotes and five additional commodities');
+      assert.deepEqual(await page.locator('#live-strip .live-title span').allTextContents(),
+        ['Brent','WTI','Gaz US','Or','EURUSD','Blé US','Maïs US','Café','Cacao','Aluminium']);
+      if(viewport.width===1440){
+        const positions=await page.locator('#live-strip .live-tile').evaluateAll(tiles=>tiles.map(tile=>{
+          const box=tile.getBoundingClientRect();return {top:box.top,left:box.left};}));
+        assert.ok(positions.slice(0,5).every(p=>p.top===positions[0].top),'Five cards in the first row');
+        assert.ok(positions.slice(5).every(p=>p.top===positions[5].top),'Five cards in the second row');
+        assert.ok(positions[5].top>positions[0].top,'New commodities are below the original five');
+      }
       await page.getByRole('button',{name:'Historique publié',exact:true}).click();
       assert.ok(await page.locator('#market-native-chart svg').count(),'Market native fallback chart');
       await page.locator('#chart-live-mode').click();

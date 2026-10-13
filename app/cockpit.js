@@ -175,11 +175,21 @@
     }
     function renderLive() {
       const box = document.getElementById('live-strip');box.replaceChildren();
-      for (const choice of charts.filter(choice=>choice.strip)) {
+      const additional = [
+        ['Blé indicatif','Blé US','OANDA'],['Maïs indicatif','Maïs US','OANDA'],
+        ['Café indicatif','Café','Capital.com'],['Cacao indicatif','Cacao','Capital.com']
+      ].map(([reference,name,provider])=>({...charts.find(choice=>choice.name===reference),name,provider}));
+      additional.push({name:'Aluminium',symbol:'CAPITALCOM:ALUMINUM',provider:'Capital.com',
+        detail:'CFD indicatif sur aluminium · distinct du benchmark LME officiel',
+        url:'https://www.tradingview.com/chart/?symbol=CAPITALCOM%3AALUMINUM'});
+      for (const choice of [...charts.filter(choice=>choice.strip),...additional]) {
         const tile = line('', 'article', 'live-tile');
+        tile.dataset.symbol=choice.symbol;
         const title=line('', 'div', 'live-title');title.append(line('','i'),line(choice.name,'span'));
+        title.title=choice.detail;
         const widget = line('Chargement du cours…', 'div', 'widget');
         const footer=line('','div','live-footer'),link=line('Instrument & horaire ↗','a');
+        if(choice.provider)footer.append(line('CFD · '+choice.provider+' · ','span'));
         link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';footer.append(link);
         tile.append(title,widget,footer);box.append(tile);
         embed(widget, 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js',
