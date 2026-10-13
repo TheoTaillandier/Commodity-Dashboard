@@ -56,3 +56,8 @@ Documenter URL officielle, produit exact, unité, fréquence, observation/public
 
 ### Vérification réelle des widgets du 13 octobre
 Les widgets publics refusent TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, CBOT blé/maïs et ICE US café/cacao, avec notification « Symbole disponible uniquement sur TradingView ». MATIF blé/maïs, Brent et EURJPY ont chargé en ligne. Les références refusées proposent un accès externe explicite. Les graphiques indicatifs blé/maïs OANDA et café/cacao Capital.com ont réellement chargé lors du contrôle fournisseur 38378069777. TTF et JKM en séance, cuivre/aluminium LME restent en accès externe ; le TTF mensuel embarqué reste consultable. Aucun benchmark officiel n’est remplacé silencieusement.
+
+## 13 octobre 2026 — Deuxième ligne de cotations
+- Cinq nouvelles cartes : OANDA:WHEATUSD, OANDA:CORNUSD, CAPITALCOM:COFFEE, CAPITALCOM:COCOA, CAPITALCOM:ALUMINUM. Prix et variations chargés dans les widgets publics Single Quote ; captures en ligne inspectées. Ce sont des CFD indicatifs ; l’aluminium ne représente pas le benchmark LME officiel. Les cinq cartes précédentes restent en première ligne.
+- Distribution actuelle : widgets TradingView. Une cotation OANDA/Capital.com dans ce widget ne constitue pas une connexion directe à leur API.
+- Autre diffusion étudiée : API officielle Capital.com https://open-api.capital.com/ (REST et WebSocket, environnement démo disponible). Authentification par compte et clé API nécessaire ; couverture des instruments et droits de réutilisation à vérifier avant connexion. Aucun compte, abonnement ni flux direct activé. Trading Economics nécessite un plan pour son intégration, comme indiqué plus haut.
