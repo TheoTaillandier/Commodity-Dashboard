@@ -52,3 +52,10 @@ Date/heure Europe/Paris ; commit de départ ; constats nouveaux ; décision ; fi
 
 ### Vérification réelle des widgets du 13 octobre
 Les widgets publics refusent TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, CBOT blé/maïs et ICE US café/cacao, avec notification « Symbole disponible uniquement sur TradingView ». MATIF blé/maïs, Brent et EURJPY ont chargé en ligne. Les références refusées proposent un accès externe explicite. Les graphiques indicatifs blé/maïs OANDA et café/cacao Capital.com ont réellement chargé lors du contrôle fournisseur 38378069777. TTF et JKM en séance, cuivre/aluminium LME restent en accès externe ; le TTF mensuel embarqué reste consultable. Aucun benchmark officiel n’est remplacé silencieusement.
+
+## 2026-10-13 — Livraison main vérifiée
+- Code publié : ff57d2a469f9232687c152d74c0e9a1fde538396 ; HTML compilé : 2300e15 ; données : 8ff3f7f. Instantané du 13 octobre à 11:48 Paris, 57 mesures, 196 observations hebdomadaires de brut US.
+- Collecte main 38378924110 réussie : prix FR/DE-LU/BE/IT-North reçus et licences contrôlées. HTML réellement publié vérifié : sources compilées, quatre zones, aucun marqueur de génération restant.
+- Interface main 38378924130 réussie : 32 tests Python, calculs Power Node, 18 vues à 1440/390/320 px, comparaisons hebdomadaires, navigation et mode hors connexion. Captures desktop/mobile inspectées ; observations en ligne conservées dans les artefacts.
+- Graphiques en ligne confirmés : MATIF blé/maïs, Brent, EURJPY et CFD blé/maïs OANDA, café/cacao Capital.com. TTF et JKM courants, cuivre/aluminium LME restent en accès externe : les widgets gratuits refusent ces références. Pas de substitution d’un benchmark officiel. TTF mensuel embarqué conservé.
+- Prochaine priorité : une source gratuite autorisée pour les références exactes encore externes ; sinon conserver les accès explicites et surveiller la fraîcheur des collectes.
