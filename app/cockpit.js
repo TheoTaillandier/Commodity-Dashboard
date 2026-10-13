@@ -553,11 +553,13 @@
         const group=groups[i];
         const exact=config.monthly?group.find(p=>p.date.slice(5,7)===anchor.slice(5,7)):group.find(p=>p.date===sameDate);
         const liveMonthly=config.monthly&&i===0&&config.reference;
-        const prior=liveMonthly?config.reference:exact||(!config.monthly&&config.allowPrevious?group.filter(p=>p.date<=sameDate&&Date.parse(sameDate)-Date.parse(p.date)<=4*dayMs).at(-1):null);
+        const nearest=config.weekly?group.reduce((best,p)=>Math.abs(Date.parse(p.date)-Date.parse(sameDate))<Math.abs(Date.parse(best?.date||'1900-01-01')-Date.parse(sameDate))?p:best,null):null;
+        const weekly=nearest&&Math.abs(Date.parse(nearest.date)-Date.parse(sameDate))<=4*dayMs?nearest:null;
+        const prior=liveMonthly?config.reference:exact||weekly||(!config.monthly&&config.allowPrevious?group.filter(p=>p.date<=sameDate&&Date.parse(sameDate)-Date.parse(p.date)<=4*dayMs).at(-1):null);
         const card=line('','div');card.style.setProperty('--year-color',palette[i]);
         card.append(line(String(yr)+(i?' · N−'+i:' · N'),'small'),line(prior?number(prior.value,2)+' '+config.unit:'Non publié','strong'),
           line(prior?(liveMonthly?'NGP spot · '+period(prior.date):config.monthly?'Moyenne '+new Intl.DateTimeFormat('fr-FR',{month:'long',timeZone:'UTC'}).format(new Date(prior.date)):
-            period(prior.date)+(exact?'':' · dernier jour ouvré')):'Période sans observation','span'));
+            period(prior.date)+(exact?'':config.weekly?' · semaine comparable':' · dernier jour ouvré')):'Période sans observation','span'));
         comparisons.append(card);
       });host.append(comparisons);
       host.append(line(config.note,'p','seasonal-note'));
@@ -607,7 +609,7 @@
       const history = snapshot.history || {};
       const stockHost=document.getElementById('oil-stock-seasonal');stockHost.hidden=selectedSector!=='oil';
       if(selectedSector==='oil')renderSeasonalChart(stockHost,{id:'oil-stock-years',title:'Stocks commerciaux de brut US · quatre années',
-        points:history.oil_crude,unit:'M bbl',maxGap:10,hoverTolerance:4,allowPrevious:true,
+        points:history.oil_crude,unit:'M bbl',maxGap:10,hoverTolerance:4,weekly:true,
         subtitle:'2026, 2025, 2024, 2023 · observations hebdomadaires EIA, hors réserve stratégique.',
         note:'Mêmes mois et même échelle. Le survol prend l’observation hebdomadaire la plus proche, à quatre jours maximum ; aucune valeur quotidienne n’est inventée.',
         sourceLabel:'EIA WPSR · stocks commerciaux US hors SPR',sourceUrl:'https://www.eia.gov/petroleum/supply/weekly/'});
@@ -1546,13 +1548,16 @@
       const host=document.getElementById('market-native-chart'),choice=charts[marketChartIndex];host.replaceChildren();
       const name=choice.history;
       document.getElementById('market-chart-title').textContent=choice.name+' · historique publié';
+      document.getElementById('market-chart-caption').textContent='Historique daté embarqué · aucune cotation en séance déduite de ces données.';
       if(choice.name==='TTF'){
+        document.getElementById('market-chart-link').href='https://www.worldbank.org/en/research/commodity-markets';
         const points=(snapshot.history?.ttf_monthly||[]).filter(p=>Date.parse(p.date)>=Date.now()-4*365*86400000);
         const last=points.at(-1);if(last)host.append(line(number(last.value,2)+' €/MWh · moyenne '+period(last.date.slice(0,7)),'h2'));
         const chart=line('','div');host.append(chart);timeChart(chart,{title:'TTF · moyennes mensuelles',unit:'€/MWh',series:[{name:'TTF mensuel',points}],maxGap:45});
         host.append(line('Banque mondiale / BCE · moyennes mensuelles, distinctes du future en séance.','p'));return;
       }
       if(!name){host.append(line('Pas d’historique quotidien vérifié pour cet instrument dans le cockpit.','p','empty'));return;}
+      document.getElementById('market-chart-link').href='https://fred.stlouisfed.org/series/'+(name==='brent'?'DCOILBRENTEU':'DCOILWTICO');
       const points=(snapshot.history?.oil_prices?.[name]||[]).filter(p=>Date.parse(p.date)>=Date.now()-365*86400000);
       const last=points.at(-1);if(last)host.append(line(number(last.value,2)+' $/bbl · '+period(last.date),'h2'));
       const chart=line('','div');host.append(chart);timeChart(chart,{title:choice.name+' spot · 12 mois',unit:'$/bbl',series:[{name:choice.name,points}],maxGap:5});

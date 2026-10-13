@@ -66,6 +66,7 @@ const http=require('node:http');
             const positions=await page.evaluate(()=>['seasonal-physical','comparison-chart','oil-stock-seasonal'].map(id=>document.getElementById(id).getBoundingClientRect().top));
             assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Brent annual, Brent/WTI, stocks order');
             assert.equal(await page.locator('#oil-stock-seasonal .year-line').count(),4,'Four actual years of crude inventories');
+            assert.ok(!(await page.locator('#oil-stock-seasonal .seasonal-comparisons').innerText()).includes('Non publié'),'Four weekly comparisons use the closest comparable week');
           }
           if(tab==='power'){
             assert.equal(await page.locator('#power-grid article').count(),6,'Six physical indicators including exchanges');
@@ -79,6 +80,7 @@ const http=require('node:http');
             const positions=await page.evaluate(()=>['power-seasonal','power-grid','power-prices-panel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
             assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Annual and physical balance are above European comparison');
           }
+          await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
           if(viewport.width!==320)await page.screenshot({path:path.join(output,[viewport.width,tab,sector||'overview'].join('-')+'.png'),fullPage:true});
           reports.push({viewport,tab,sector,...state});
         }
