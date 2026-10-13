@@ -4,7 +4,7 @@
 
 ## Lire le cockpit
 
-- **Marchés** : cinq cotations indicatives et un graphique à gauche avec sélecteur Énergie/Métaux/Agriculture/FX, trois prochaines publications, repères physiques datés, gaz et GNL. Le bouton **Historique publié** ouvre les séries embarquées même lorsque les widgets sont bloqués par le réseau.
+- **Marchés** : dix cotations indicatives sur deux lignes (blé US, maïs US, café, cacao et aluminium sur la seconde) et un graphique à gauche avec sélecteur Énergie/Métaux/Agriculture/FX, trois prochaines publications, repères physiques datés, gaz et GNL. Le bouton **Historique publié** ouvre les séries embarquées même lorsque les widgets sont bloqués par le réseau.
 - **Physique** : trois faits à comprendre, graphiques avec unités et échelles, comparaison annuelle, stocks commerciaux de brut US sur quatre années, tableau des mesures et commentaire concis. Pétrole, gaz, agriculture et métaux restent séparés.
 - **Power FR** : prix day-ahead du créneau livré, aujourd’hui/demain, comparateur France/DE-LU, Belgique ou Italie du Nord, historique annuel remonté, mix et bilan physique RTE et prévision de demande ENTSO-E. Un prix day-ahead est fixé la veille, distinct d’une cotation intraday.
 

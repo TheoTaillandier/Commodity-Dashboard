@@ -59,3 +59,8 @@ Les widgets publics refusent TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, CBO
 - Interface main 38378924130 réussie : 32 tests Python, calculs Power Node, 18 vues à 1440/390/320 px, comparaisons hebdomadaires, navigation et mode hors connexion. Captures desktop/mobile inspectées ; observations en ligne conservées dans les artefacts.
 - Graphiques en ligne confirmés : MATIF blé/maïs, Brent, EURJPY et CFD blé/maïs OANDA, café/cacao Capital.com. TTF et JKM courants, cuivre/aluminium LME restent en accès externe : les widgets gratuits refusent ces références. Pas de substitution d’un benchmark officiel. TTF mensuel embarqué conservé.
 - Prochaine priorité : une source gratuite autorisée pour les références exactes encore externes ; sinon conserver les accès explicites et surveiller la fraîcheur des collectes.
+
+## 2026-10-13 — Deuxième ligne de cotations, validation sur branche
+- Demande : conserver les cinq cartes existantes et ajouter dessous blé US, maïs US, café, cacao et aluminium. Ajouter cinq cotations, sans élargir le bandeau à toute la liste.
+- OANDA WHEATUSD/CORNUSD et Capital.com COFFEE/COCOA/ALUMINUM : CFD indicatifs, fournisseur identifié ; aluminium distinct du benchmark LME. Affichage encore via TradingView ; une autre source de diffusion reste demandée pour une intervention ultérieure.
+- Vérification prévue : dix cartes, deux lignes de cinq sur desktop, adaptation mobile et vrais prix visibles dans les cinq nouveaux widgets Single Quote. Aucun historique physique ni prix Power modifié.

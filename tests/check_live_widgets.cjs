@@ -3,6 +3,7 @@ const {chromium}=require('playwright');
 const fs=require('node:fs/promises');
 const http=require('node:http');
 const path=require('node:path');
+const assert=require('node:assert/strict');
 
 (async()=>{
   const html=await fs.readFile('index.html');
@@ -19,6 +20,39 @@ const path=require('node:path');
       return permitted?route.continue():route.abort();
     });
     await page.goto(url,{waitUntil:'domcontentloaded'});
+    const quoteReports=[];
+    await page.waitForTimeout(12000);
+    const quoteSession=await page.context().newCDPSession(page);
+    await quoteSession.send('Accessibility.enable');
+    const {frameTree}=await quoteSession.send('Page.getFrameTree');
+    const frames=[];
+    function collectFrames(tree){frames.push(tree.frame);for(const child of tree.childFrames||[])collectFrames(child);}
+    collectFrames(frameTree);
+    for(const tile of await page.locator('#live-strip .live-tile').all()){
+      const symbol=await tile.getAttribute('data-symbol');
+      if(!['OANDA:WHEATUSD','OANDA:CORNUSD','CAPITALCOM:COFFEE','CAPITALCOM:COCOA','CAPITALCOM:ALUMINUM'].includes(symbol))continue;
+      // Provider frames inside closed shadow roots are absent from tile
+      // locators. Read their rendered accessibility tree through Chromium.
+      const texts=[];
+      for(const frame of frames){
+        // CDP exposes the widget's JSON configuration separately as a fragment.
+        let frameURL=frame.url+(frame.urlFragment||'');
+        try{frameURL=decodeURIComponent(frameURL);}catch{}
+        if(!frameURL.includes('single-quote')||!frameURL.includes(symbol))continue;
+        const tree=await quoteSession.send('Accessibility.getFullAXTree',{frameId:frame.id});
+        texts.push(...tree.nodes.filter(node=>!node.ignored&&node.name?.value).map(node=>node.name.value));
+      }
+      const body=texts.map(text=>text.trim()).filter(Boolean).join('\n');
+      const refused=/only available|not supported|not available|uniquement sur TradingView|symbole n.existe pas/i.test(body);
+      const hasPrice=body.split('\n').some(text=>/^[+-]?\d[\d\s.,]*$/.test(text.trim()));
+      quoteReports.push({symbol,body,refused,hasPrice});
+    }
+    await quoteSession.detach();
+    await fs.writeFile('ui-report/live-quotes.json',JSON.stringify(quoteReports,null,2));
+    await page.locator('#live-strip').screenshot({path:'ui-report/live-quotes-desktop.png'});
+    console.log('LIVE QUOTES: '+JSON.stringify(quoteReports));
+    assert.equal(quoteReports.length,5,'All five additional quote widgets are observed');
+    for(const report of quoteReports)assert.ok(report.hasPrice&&!report.refused,'A real quoted price is visible for '+report.symbol);
     for(const [group,name] of [['Énergie','Brent'],['Énergie','TTF'],['Énergie','LNG JKM'],['Métaux','Cuivre LME'],['Métaux','Aluminium LME'],['Agriculture','Blé France'],['Agriculture','Maïs France'],['Agriculture','Blé US'],['Agriculture','Café'],['FX','EURJPY'],['Agriculture','Blé indicatif'],['Agriculture','Maïs indicatif'],['Agriculture','Café indicatif'],['Agriculture','Cacao indicatif']]){
       await page.locator('#chart-groups').getByRole('button',{name:group,exact:true}).click();
       await page.locator('#chart-picks').getByRole('button',{name,exact:true}).click();
