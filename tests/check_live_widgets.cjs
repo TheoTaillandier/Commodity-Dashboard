@@ -19,7 +19,7 @@ const path=require('node:path');
       return permitted?route.continue():route.abort();
     });
     await page.goto(url,{waitUntil:'domcontentloaded'});
-    for(const [group,name] of [['Énergie','Brent'],['Énergie','TTF'],['Énergie','LNG JKM'],['Métaux','Cuivre LME'],['Métaux','Aluminium LME'],['Agriculture','Blé France'],['Agriculture','Maïs France'],['Agriculture','Blé US'],['Agriculture','Café'],['FX','EURJPY'],['Énergie','TTF indicatif'],['Agriculture','Blé indicatif'],['Agriculture','Maïs indicatif'],['Agriculture','Café indicatif'],['Agriculture','Cacao indicatif']]){
+    for(const [group,name] of [['Énergie','Brent'],['Énergie','TTF'],['Énergie','LNG JKM'],['Métaux','Cuivre LME'],['Métaux','Aluminium LME'],['Agriculture','Blé France'],['Agriculture','Maïs France'],['Agriculture','Blé US'],['Agriculture','Café'],['FX','EURJPY'],['Énergie'],['Agriculture','Blé indicatif'],['Agriculture','Maïs indicatif'],['Agriculture','Café indicatif'],['Agriculture','Cacao indicatif']]){
       await page.locator('#chart-groups').getByRole('button',{name:group,exact:true}).click();
       await page.locator('#chart-picks').getByRole('button',{name,exact:true}).click();
       // Bound each provider observation, including a refusal or network failure.

@@ -149,11 +149,10 @@
       {name:'EURUSD',group:'fx',symbol:'OANDA:EURUSD',detail:'Change indicatif OANDA · USD pour 1 EUR',strip:true},
       {name:'EURGBP',group:'fx',symbol:'OANDA:EURGBP',detail:'Change indicatif OANDA · GBP pour 1 EUR'},
       {name:'EURJPY',group:'fx',symbol:'OANDA:EURJPY',detail:'Change indicatif OANDA · JPY pour 1 EUR'}
-      ,{name:'TTF indicatif',group:'energy',symbol:'CAPITALCOM:TRNLTTFM1!',detail:'Cours dérivé indicatif Capital.com sur future TTF · contrat continu · €/MWh',kind:'indicatif'}
-      ,{name:'Blé indicatif',group:'agri',symbol:'OANDA:WHEATUSD',detail:'CFD indicatif OANDA sur blé · unité affichée par le fournisseur',kind:'indicatif'}
-      ,{name:'Maïs indicatif',group:'agri',symbol:'OANDA:CORNUSD',detail:'CFD indicatif OANDA sur maïs · unité affichée par le fournisseur',kind:'indicatif'}
-      ,{name:'Café indicatif',group:'agri',symbol:'CAPITALCOM:COFFEE',detail:'CFD indicatif Capital.com sur café US · unité affichée par le fournisseur',kind:'indicatif'}
-      ,{name:'Cacao indicatif',group:'agri',symbol:'CAPITALCOM:COCOA',detail:'CFD indicatif Capital.com sur cacao US · unité affichée par le fournisseur',kind:'indicatif'}
+      ,{name:'Blé indicatif',group:'agri',symbol:'OANDA:WHEATUSD',detail:'CFD indicatif OANDA sur blé · $/bu',kind:'indicatif'}
+      ,{name:'Maïs indicatif',group:'agri',symbol:'OANDA:CORNUSD',detail:'CFD indicatif OANDA sur maïs · $/bu',kind:'indicatif'}
+      ,{name:'Café indicatif',group:'agri',symbol:'CAPITALCOM:COFFEE',detail:'CFD indicatif Capital.com sur café US · $/lb',kind:'indicatif'}
+      ,{name:'Cacao indicatif',group:'agri',symbol:'CAPITALCOM:COCOA',detail:'CFD indicatif Capital.com sur cacao US · $/t',kind:'indicatif'}
     ].map(choice=>({...choice,url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(choice.symbol),
       restricted:['ICEENDEX:TFM1!','NYMEX:JKM1!','LME:CA1!','LME:AH1!','CBOT:ZW1!','CBOT:ZC1!','ICEUS:KC1!','ICEUS:CC1!'].includes(choice.symbol)}));
     let marketGroup = 'energy';
@@ -216,7 +215,8 @@
           line('Cette référence est consultable chez le fournisseur. Son intégration dans le widget gratuit est refusée.','p'));
         const link=line('Ouvrir le graphique '+choice.name+' ↗','a','button');link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);
         if(choice.te){const link=line('Consulter Trading Economics ↗','a','button');link.href=choice.te;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
-        const alternative={TTF:'TTF indicatif','Blé US':'Blé indicatif','Maïs US':'Maïs indicatif',Café:'Café indicatif',Cacao:'Cacao indicatif'}[choice.name];
+        if(choice.name==='TTF'){const button=line('Voir l’historique mensuel publié','button','button');button.type='button';button.addEventListener('click',()=>setMarketMode('history'));panel.append(button);}
+        const alternative={'Blé US':'Blé indicatif','Maïs US':'Maïs indicatif',Café:'Café indicatif',Cacao:'Cacao indicatif'}[choice.name];
         if(alternative){const button=line('Voir '+alternative+' dans le cockpit','button','button');button.type='button';button.addEventListener('click',()=>renderChart(charts.findIndex(c=>c.name===alternative)));panel.append(button,
           line('Alternative clairement identifiée : un cours dérivé indicatif, distinct de la référence officielle.','small'));}
         box.append(panel);return;
