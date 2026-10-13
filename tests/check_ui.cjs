@@ -24,6 +24,26 @@ const http=require('node:http');
       await page.goto(url,{waitUntil:'domcontentloaded'});
       await page.getByRole('button',{name:'Historique publié',exact:true}).click();
       assert.ok(await page.locator('#market-native-chart svg').count(),'Market native fallback chart');
+      await page.locator('#chart-live-mode').click();
+      for(const [group,names] of Object.entries({
+        'Énergie':['Brent','WTI','Gaz US','TTF','LNG JKM'],
+        'Métaux':['Cuivre LME','Aluminium LME','Or'],
+        'Agriculture':['Blé US','Blé France','Maïs US','Maïs France','Café','Cacao'],
+        'FX':['EURUSD','EURGBP','EURJPY']
+      })){
+        await page.locator('#chart-groups').getByRole('button',{name:group,exact:true}).click();
+        for(const name of names){
+          await page.locator('#chart-picks').getByRole('button',{name,exact:true}).click();
+          assert.ok((await page.locator('#market-chart-title').innerText()).includes(name),'Selected instrument remains identified');
+          assert.ok((await page.locator('#market-chart-link').getAttribute('href')).includes('symbol='),'Exact source symbol is accessible');
+          assert.equal(await page.locator('#chart-picks [aria-pressed="true"]').count(),1,'One selected instrument');
+        }
+      }
+      await page.locator('#chart-groups').getByRole('button',{name:'Énergie',exact:true}).click();
+      await page.locator('#chart-picks').getByRole('button',{name:'TTF',exact:true}).click();
+      await page.locator('#chart-history-mode').click();
+      assert.ok((await page.locator('#market-native-chart').innerText()).includes('moyennes mensuelles'),'TTF fallback is monthly, never live');
+      await page.locator('#chart-picks').getByRole('button',{name:'Brent',exact:true}).click();
       for(const tab of ['markets','physical','power']){
         await page.locator('[data-page="'+tab+'"]').click();
         const sectors=tab==='physical'?['oil','gas','agri','metals']:[null];
@@ -42,6 +62,23 @@ const http=require('node:http');
           assert.equal(state.missingValues,0,'No invalid numeric values');
           if(sector)assert.ok(await page.locator('#metrics tbody tr').count(),'Official measurements are visible');
           if((sector==='oil'||tab==='power'))assert.ok(state.annualCurves>=3,'Three years of genuine observations');
+          if(sector==='oil'){
+            const positions=await page.evaluate(()=>['seasonal-physical','comparison-chart','oil-stock-seasonal'].map(id=>document.getElementById(id).getBoundingClientRect().top));
+            assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Brent annual, Brent/WTI, stocks order');
+            assert.equal(await page.locator('#oil-stock-seasonal .year-line').count(),4,'Four actual years of crude inventories');
+          }
+          if(tab==='power'){
+            assert.equal(await page.locator('#power-grid article').count(),6,'Six physical indicators including exchanges');
+            assert.ok(await page.locator('#power-mix .mix-stack span').count(),'Production mix shares');
+            for(const market of ['Belgique','Italie du Nord','DE-LU']){
+              await page.locator('#power-market-picks').getByRole('button',{name:market,exact:true}).click();
+              assert.ok((await page.locator('#power-comparison-title').innerText()).includes(market));
+              assert.ok((await page.locator('#power-price-meta').innerText()).includes('périodes du marché comparé'),'Comparator has actual embedded data');
+              assert.equal(await page.locator('#power-price-chart svg').count(),1);
+            }
+            const positions=await page.evaluate(()=>['power-seasonal','power-grid','power-prices-panel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
+            assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Annual and physical balance are above European comparison');
+          }
           if(viewport.width!==320)await page.screenshot({path:path.join(output,[viewport.width,tab,sector||'overview'].join('-')+'.png'),fullPage:true});
           reports.push({viewport,tab,sector,...state});
         }

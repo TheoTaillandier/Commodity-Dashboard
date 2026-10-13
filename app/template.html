@@ -28,11 +28,12 @@
     <main class="market-grid">
       <section class="card chart">
         <div class="bar"><h2 id="market-chart-title">Brent · indicatif OANDA</h2><a id="market-chart-link" href="https://www.tradingview.com/symbols/BCOUSD/?exchange=OANDA" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a></div>
+        <div class="chart-groups" id="chart-groups" aria-label="Catégorie de marché"></div>
         <div class="chart-picks" id="chart-picks" aria-label="Choisir le graphique"></div>
         <div class="chart-mode" aria-label="Source du graphique"><button type="button" class="active" id="chart-live-mode" aria-pressed="true">En séance</button><button type="button" id="chart-history-mode" aria-pressed="false">Historique publié</button><span id="chart-mode-note">Cotation indicative du fournisseur</span></div>
         <div class="native-market-chart" id="market-native-chart" hidden></div>
         <div class="widget" id="market-chart"><p class="empty">Chargement de TradingView…</p></div>
-        <div class="caption">Cours indicatif OANDA. L’historique publié permet de comparer les spots EIA si le widget est bloqué par le réseau.</div>
+        <div class="caption" id="market-chart-caption">Instrument, unité et accès fournisseur.</div>
       </section>
       <aside class="right">
         <section class="card watch">
@@ -65,7 +66,7 @@
       <h2 class="section-heading">À comprendre en 10 secondes</h2>
       <div class="signal-grid" id="signals"></div>
       <div class="physical-layout">
-          <section><h2 class="section-heading" id="sector-heading">Pétrole · prix spot et stocks</h2><div class="chart-duo"><div class="card side-pad trend" id="trend" hidden><h3 id="trend-title">Stocks commerciaux de brut US · 26 semaines</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Évolution des stocks ou flux physiques"><polyline id="trend-line" points=""></polyline></svg><div class="axis"><span id="trend-start"></span><span id="trend-end"></span></div></div><div class="card side-pad trend" id="trend-two" hidden><h3 id="trend-two-title">Deuxième repère</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Historique du deuxième repère"><polyline id="trend-two-line" points=""></polyline></svg><div class="axis"><span id="trend-two-start"></span><span id="trend-two-end"></span></div></div></div><div id="comparison-chart" class="card side-pad trend" hidden></div><div id="sector-visuals" class="sector-visuals"></div><div id="seasonal-physical" class="seasonal-stack"></div><div id="sector-context" class="context-note"></div><h2 class="section-heading" style="margin-top:16px">Dernières mesures officielles</h2><div id="metrics"></div></section>
+          <section><h2 class="section-heading" id="sector-heading">Pétrole · prix spot et stocks</h2><div id="seasonal-physical" class="seasonal-stack"></div><div id="comparison-chart" class="card side-pad trend" hidden></div><div id="oil-stock-seasonal" class="card seasonal-panel" hidden></div><div class="chart-duo"><div class="card side-pad trend" id="trend" hidden><h3 id="trend-title">Stocks commerciaux de brut US · 26 semaines</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Évolution des stocks ou flux physiques"><polyline id="trend-line" points=""></polyline></svg><div class="axis"><span id="trend-start"></span><span id="trend-end"></span></div></div><div class="card side-pad trend" id="trend-two" hidden><h3 id="trend-two-title">Deuxième repère</h3><svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Historique du deuxième repère"><polyline id="trend-two-line" points=""></polyline></svg><div class="axis"><span id="trend-two-start"></span><span id="trend-two-end"></span></div></div></div><div id="sector-visuals" class="sector-visuals"></div><div id="sector-context" class="context-note"></div><h2 class="section-heading" style="margin-top:16px">Dernières mesures officielles</h2><div id="metrics"></div></section>
         <aside class="physical-side">
           <section class="card side-pad" id="takeaways"><h3>Ce que disent les publications</h3><div id="takeaway-list"></div></section>
           <section class="card side-pad" id="sector-news"><h3>Publications & contexte · EIA</h3><p>Pétrole et gaz · titres datés, contexte à confronter aux prix.</p><div id="stories"></div></section>
@@ -84,11 +85,19 @@
         <div class="price-grid" id="power-price-grid"></div>
       </section>
       <section class="card power-brief"><div class="power-section-header"><div><div class="eyebrow">SYNTHÈSE</div><h2>Ce qui change sur le marché</h2></div><span class="badge">Lecture calculée</span></div><p id="power-market-takeaway">Lecture des prix en cours…</p><div id="power-market-evidence" class="power-brief-sub"></div></section>
+      <section id="power-seasonal" class="card seasonal-panel"></section>
+      <h2 class="power-chapter">Le système physique · observations RTE</h2>
+      <div class="power-grid" id="power-grid"></div>
+      <div class="power-layout">
+        <section class="card"><h2>Demande et résiduelle · 24 h</h2><p>Résiduelle indicative = consommation − éolien − solaire. Une valeur plus élevée peut solliciter des moyens pilotables.</p><div id="power-curve" class="empty">Collecte RTE en attente.</div><div class="power-legend" id="power-axis"></div></section>
+        <section class="card"><h2>Production française · dernière observation</h2><p>Part de la production française observée et puissance par filière en GW. Les imports sont affichés séparément.</p><div id="power-mix" class="empty">Collecte RTE en attente.</div><small id="power-mix-time" class="detail"></small></section>
+      </div>
       <div class="power-alerts" id="power-alert-list" aria-label="Repères de marché calculés"></div>
       <div class="power-analysis-layout">
         <section class="card power-history-panel" id="power-prices-panel">
-          <div class="power-section-header"><div><div class="eyebrow">MARCHÉ DE GROS</div><h2>France vs DE-LU · enchère day-ahead</h2></div><span class="power-legend-inline"><i></i> France <i></i> DE-LU</span></div>
+          <div class="power-section-header"><div><div class="eyebrow">MARCHÉ DE GROS</div><h2 id="power-comparison-title">France vs DE-LU · enchère day-ahead</h2></div><span class="power-legend-inline"><i></i> France <i></i> <span id="power-comparison-label">DE-LU</span></span></div>
           <p>Chaque point est le prix fixé la veille pour un créneau de livraison. L’échelle est commune aux deux marchés.</p>
+          <div class="power-controls power-market-controls" id="power-market-picks" aria-label="Marché comparé"></div>
           <div class="power-controls" id="power-price-span" aria-label="Période des prix"></div>
           <div class="power-price-chart" id="power-price-chart"><span class="empty">Collecte des prix en attente.</span></div>
           <div class="power-meta" id="power-price-meta"></div>
@@ -100,14 +109,7 @@
           <section class="card power-insight-card"><div class="eyebrow">AUTRE MARCHÉ</div><h2>Intraday · France</h2><p class="power-intraday-empty">Prix ID1 / ID3 indisponible dans le cockpit</p><p>Flux sous licence non connecté. Le day-ahead et l’équilibrage RTE sont des marchés différents.</p><a href="https://www.epexspot.com/en/market-results" target="_blank" rel="noopener noreferrer">Consulter les résultats EPEX ↗</a></section>
         </aside>
       </div>
-      <section id="power-seasonal" class="card seasonal-panel"></section>
       <details class="card power-history-panel"><summary>Comment lire les variations de prix</summary><p id="power-price-reading"></p><p>Une hausse du prix day-ahead de demain reflète l’enchère pour demain. Les mesures RTE ci-dessous décrivent des heures déjà écoulées ; les comparer permet de formuler des hypothèses, pas de prouver la cause d’un prix futur.</p></details>
-      <h2 class="power-chapter">Le système physique · observations RTE</h2>
-      <div class="power-grid" id="power-grid"></div>
-      <div class="power-layout">
-        <section class="card"><h2>Demande et résiduelle · 24 h</h2><p>Résiduelle indicative = consommation − éolien − solaire. Une valeur plus élevée peut solliciter des moyens pilotables.</p><div id="power-curve" class="empty">Collecte RTE en attente.</div><div class="power-legend" id="power-axis"></div></section>
-        <section class="card"><h2>Production française · dernière observation</h2><p>Puissance par filière en MW. L’échelle des barres montre la part de la production affichée.</p><div id="power-mix" class="empty">Collecte RTE en attente.</div><small id="power-mix-time" class="detail"></small></section>
-      </div>
       <section class="card power-history-panel"><div class="power-section-header"><div><div class="eyebrow">HISTORIQUE PHYSIQUE</div><h2>RTE · demande, gaz, renouvelables et échanges</h2></div></div><p>Observations horaires accumulées sans compléter les trous. « 1 an » affiche la période réellement collectée.</p><div class="power-controls" id="power-span" aria-label="Période du graphique"></div><div class="power-controls" id="power-series" aria-label="Mesure du graphique"></div><div class="power-history-chart" id="power-history-chart"><span class="empty">Historique RTE en attente.</span></div><div class="power-meta" id="power-history-meta"></div><p id="power-history-reading"></p></section>
       <div class="power-bottom">
         <section class="card"><h2>Pour surveiller le gaz et les échanges</h2><p id="power-readout">Le gaz électrique, l'éolien, le solaire et le solde d'import/export seront affichés après la première collecte RTE.</p><p>Un solde RTE négatif signifie une exportation nette ; positif, une importation nette. Les données sont des télémesures complétées d'estimations.</p><a href="https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/" target="_blank" rel="noopener noreferrer">Source RTE éCO2mix ↗</a></section>

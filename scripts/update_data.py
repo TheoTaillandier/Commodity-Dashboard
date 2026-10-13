@@ -64,6 +64,7 @@ RTE_BACKFILL_PAGES = 8  # About eight days at the source's 15-minute resolution.
 ENTSOE_URL = "https://web-api.tp.entsoe.eu/api"
 ENTSOE_REPORT_URL = "https://transparency.entsoe.eu/"
 POWER_ZONES = {"fr": "10YFR-RTE------C", "de": "10Y1001A1001A82H"}
+POWER_PRICE_ZONES = {"fr": "FR", "de": "DE-LU", "be": "BE", "it_north": "IT-North"}
 POWER_PRICE_SOURCE = "https://api.energy-charts.info/price"
 TTF_NGP_URL = "https://gasandregistry.eex.com/Gas/NGP/TTF_NGP_15_Mins.csv"
 TTF_NGP_HISTORY_URL = "https://gasandregistry.eex.com/Gas/NGP/TTF_NGP_60_Days.csv"
@@ -255,14 +256,14 @@ def save_power_history(previous: dict, result: dict, now: datetime) -> None:
 
 def fetch_power_price(zone: str, now: datetime) -> bytes:
     """The provider declares the licence per response; parsing enforces it."""
-    params = {"bzn": "FR" if zone == "fr" else "DE-LU",
+    params = {"bzn": POWER_PRICE_ZONES[zone],
               "start": (now.date() - timedelta(days=9)).isoformat(),
               "end": (now.date() + timedelta(days=2)).isoformat()}
     return fetch_power_url(POWER_PRICE_SOURCE + "?" + urlencode(params))
 
 
 def parse_power_price(raw: bytes, zone: str, now: datetime) -> dict:
-    if zone not in ("fr", "de"):
+    if zone not in POWER_PRICE_ZONES:
         raise ValueError("Unknown bidding zone")
     data = json.loads(raw)
     licence = data.get("license_info", "")
@@ -284,17 +285,22 @@ def parse_power_price(raw: bytes, zone: str, now: datetime) -> dict:
         raise ValueError("Power price publication incomplete or stale")
     return {"points": points, "as_of": points[-1]["at"],
             "url": "https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=" +
-                   ("FR" if zone == "fr" else "DE"),
+                   {"fr": "FR", "de": "DE", "be": "BE", "it_north": "IT"}[zone],
             "licence": licence, "provenance": "Fraunhofer ISE Energy-Charts · day-ahead"}
 
 
 def merge_power_prices(previous: dict, results: dict, now: datetime) -> dict:
     cutoff = now - timedelta(days=365)
     series = {}
-    for zone in ("fr", "de"):
+    licences = {}
+    for zone in POWER_PRICE_ZONES:
         old = previous.get("series", {}).get(zone, [])
         incoming = results.get("power_price_" + zone)
         added = incoming.get("points", []) if isinstance(incoming, dict) else []
+        licence = incoming.get("licence") if isinstance(incoming, dict) else None
+        licence = licence or previous.get("licence", {}).get(zone)
+        if licence:
+            licences[zone] = licence
         by_time = {}
         for point in [*old, *added]:
             try:
@@ -306,12 +312,9 @@ def merge_power_prices(previous: dict, results: dict, now: datetime) -> dict:
                 by_time[point["at"]] = {"at": point["at"], "value": round(value, 2)}
         series[zone] = sorted(by_time.values(), key=lambda point: point["at"])
     return {"schema": 1, "source": "Fraunhofer ISE Energy-Charts",
-            "market": "day-ahead auction · France and DE-LU",
+            "market": "day-ahead auction · France, DE-LU, Belgium, Italy North",
             "unit": "EUR/MWh", "generated_at": now.isoformat(), "series": series,
-            "licence": {zone: (results.get("power_price_" + zone) or {}).get("licence") or
-                        previous.get("licence", {}).get(zone)
-                        for zone in ("fr", "de") if (results.get("power_price_" + zone) or {}).get("licence") or
-                        previous.get("licence", {}).get(zone)}}
+            "licence": licences}
 
 
 def save_power_prices(previous: dict, results: dict, now: datetime) -> None:
@@ -614,13 +617,21 @@ def parse_oil_flows(raw: bytes) -> dict:
     return {"metrics": result, "as_of": period, "url": OIL_REPORT_URL}
 
 
-def parse_oil_history(raw: bytes) -> dict:
+def parse_oil_history(raw: bytes, today: date | None = None) -> dict:
     report = json.loads(raw.decode("utf-8-sig"))
     series = report["data"]["U.S."]["time_series"]
-    points = [{"date": item["date"], "value": round(float(item["value"]) / 1000, 3)}
-              for item in series if item.get("value") is not None and not item.get("suppression_flag")]
-    points = sorted(points, key=lambda x: x["date"])[-26:]
-    if len(points) < 12 or not 100 <= points[-1]["value"] <= 800:
+    today = today or datetime.now(PARIS).date()
+    start = comparison_start(today)
+    points = {}
+    for item in series:
+        if item.get("suppression_flag") or item.get("value") is None:
+            continue
+        observed = date.fromisoformat(item["date"])
+        value = measured(item["value"])
+        if start <= observed <= today and value is not None and 100000 <= value <= 800000:
+            points[observed.isoformat()] = {"date": observed.isoformat(), "value": round(value / 1000, 3)}
+    points = sorted(points.values(), key=lambda x: x["date"])
+    if len(points) < 12 or (today - date.fromisoformat(points[-1]["date"])).days > 21:
         raise ValueError("EIA historical crude series invalid")
     return {"points": points, "as_of": points[-1]["date"],
             "published": report["metadata"].get("release_date"), "url": OIL_REPORT_URL}
@@ -1200,7 +1211,7 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
     stories = previous.get("stories", [])
     for key in ("oil", "oil_flows", "oil_history", "oil_price_history", "gas", "wasde", "crop_progress", "news", "norway",
                 "brent", "wti", "henry", "gie", "gie_fr", "alsi", "alsi_fr",
-                "rte_power", "entsoe_fr", "entsoe_de", "power_price_fr", "power_price_de",
+                "rte_power", "entsoe_fr", "entsoe_de", "power_price_fr", "power_price_de", "power_price_be", "power_price_it_north",
                 "power_seasonal", "ttf_monthly", "ttf_ngp"):
         result = results.get(key)
         if isinstance(result, Exception):
@@ -1301,7 +1312,7 @@ def main() -> None:
     tasks = {
         "oil": lambda: parse_oil(fetch(OIL_URL)),
         "oil_flows": lambda: parse_oil_flows(fetch(OIL_FLOW_URL)),
-        "oil_history": lambda: parse_oil_history(fetch(OIL_HISTORY_URL)),
+        "oil_history": lambda: parse_oil_history(fetch(OIL_HISTORY_URL), now.astimezone(PARIS).date()),
         "oil_price_history": lambda: fetch_oil_price_history(now.date()),
         "power_seasonal": lambda: fetch_power_seasonal(previous, now),
         "ttf_monthly": lambda: fetch_ttf_monthly(now.astimezone(PARIS).date()),
@@ -1324,7 +1335,7 @@ def main() -> None:
     tasks["wti"] = lambda: parse_eia_spot(fetch(EIA_OIL_SPOT_URL), "wti", now.date())
     tasks["henry"] = lambda: parse_eia_spot(fetch(EIA_GAS_SPOT_URL), "henry", now.date())
     tasks["rte_power"] = lambda: parse_rte_power(fetch_rte_history(), now)
-    for zone in ("fr", "de"):
+    for zone in POWER_PRICE_ZONES:
         tasks["power_price_" + zone] = lambda code=zone: parse_power_price(fetch_power_price(code, now), code, now)
     entsoe_token = os.environ.get("ENTSOE_API_TOKEN", "").strip()
     if entsoe_token:

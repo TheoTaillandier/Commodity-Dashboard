@@ -4,9 +4,9 @@
 
 ## Lire le cockpit
 
-- **Marchés** : cinq cotations indicatives TradingView/OANDA, graphique à gauche, trois prochaines publications, repères physiques datés, gaz et GNL. Le bouton **Historique publié** ouvre les séries embarquées même lorsque les widgets sont bloqués par le réseau.
-- **Physique** : trois faits à comprendre, graphiques avec unités et échelles, comparaison annuelle, tableau des mesures et commentaire concis. Pétrole, gaz, agriculture et métaux restent séparés.
-- **Power FR** : prix day-ahead du créneau livré, aujourd’hui/demain, écart France/DE-LU, historique annuel, facteurs physiques RTE et prévision de demande ENTSO-E. Un prix day-ahead est fixé la veille, distinct d’une cotation intraday.
+- **Marchés** : cinq cotations indicatives et un graphique à gauche avec sélecteur Énergie/Métaux/Agriculture/FX, trois prochaines publications, repères physiques datés, gaz et GNL. Le bouton **Historique publié** ouvre les séries embarquées même lorsque les widgets sont bloqués par le réseau.
+- **Physique** : trois faits à comprendre, graphiques avec unités et échelles, comparaison annuelle, stocks commerciaux de brut US sur quatre années, tableau des mesures et commentaire concis. Pétrole, gaz, agriculture et métaux restent séparés.
+- **Power FR** : prix day-ahead du créneau livré, aujourd’hui/demain, comparateur France/DE-LU, Belgique ou Italie du Nord, historique annuel remonté, mix et bilan physique RTE et prévision de demande ENTSO-E. Un prix day-ahead est fixé la veille, distinct d’une cotation intraday.
 
 Le HTML contient un instantané daté. À l’ouverture et via **Rafraîchir**, il tente de récupérer les JSON publiés sur GitHub. Les widgets suivent leur cadence de fournisseur. Les prix Power sont vérifiés toutes les 30 minutes ; les observations RTE toutes les 15 minutes quand Power est visible. Un accès refusé conserve la dernière donnée datée.
 
@@ -39,3 +39,7 @@ GitHub Actions collecte toutes les deux heures, avec possibilité de retard côt
 EEX expose des fichiers NGP téléchargeables mais la republication automatique est soumise à ses droits de données. La collecte NGP est donc désactivée par défaut. La variable Actions `EEX_NGP_REDISTRIBUTION_ALLOWED=true` est réservée à un droit de redistribution obtenu séparément ; elle ne donne pas ce droit. Sans cela, le TTF affiche le repère mensuel Banque mondiale/BCE, explicitement daté. PEG, JKM et ID1/ID3 restent signalés comme flux non connectés.
 
 [Sources, unités et calculs](methodology.md) · [Registre des sources](docs/source-register.md) · [Journal de maintenance](docs/agent-journal.md)
+
+### Instruments du graphique
+
+TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, blé/maïs CBOT et MATIF, café Arabica/cacao ICE US et EURUSD/EURGBP/EURJPY sont sélectionnables avec leur symbole, unité et définition. Les futures continus mensuels LME ne sont pas les benchmarks LME 3 mois. La disponibilité dans le widget dépend des accords du fournisseur ; le lien externe reste affiché. Aucun cours d’un autre marché n’est substitué. Les nouveaux widgets Trading Economics nécessitent un abonnement : seuls des liens vers les séries TTF/JKM sont fournis, sans achat ni clé exposée.

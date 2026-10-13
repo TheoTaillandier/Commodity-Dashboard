@@ -6,6 +6,8 @@
     let powerPrices = JSON.parse(document.getElementById('power-price-data').textContent);
     let powerSpan = 7;
     let powerPriceSpan = 2;
+    let powerCompareZone = 'de';
+    const powerPriceZones = {de:{label:'DE-LU',bzn:'DE-LU'},be:{label:'Belgique',bzn:'BE'},it_north:{label:'Italie du Nord',bzn:'IT-North'}};
     let powerMeasure = 'load';
     let metrics = Array.isArray(snapshot.metrics) ? snapshot.metrics : [];
     let byId = Object.fromEntries(metrics.map(item => [item.id, item]));
@@ -130,12 +132,25 @@
     }
 
     const charts = [
-      {name:'Brent', symbol:'OANDA:BCOUSD', url:'https://www.tradingview.com/symbols/BCOUSD/?exchange=OANDA'},
-      {name:'WTI', symbol:'OANDA:WTICOUSD', url:'https://www.tradingview.com/symbols/WTICOUSD/?exchange=OANDA'},
-      {name:'Gaz US', symbol:'OANDA:NATGASUSD', url:'https://www.tradingview.com/symbols/NATGASUSD/?exchange=OANDA'},
-      {name:'Cuivre', symbol:'OANDA:XCUUSD', url:'https://www.tradingview.com/symbols/XCUUSD/?exchange=OANDA'},
-      {name:'Or', symbol:'OANDA:XAUUSD', url:'https://www.tradingview.com/symbols/XAUUSD/?exchange=OANDA'}
-    ];
+      {name:'Brent',group:'energy',symbol:'OANDA:BCOUSD',detail:'CFD indicatif OANDA · $/bbl',strip:true,history:'brent'},
+      {name:'WTI',group:'energy',symbol:'OANDA:WTICOUSD',detail:'CFD indicatif OANDA · $/bbl',strip:true,history:'wti'},
+      {name:'Gaz US',group:'energy',symbol:'OANDA:NATGASUSD',detail:'CFD indicatif OANDA · $/MMBtu',strip:true},
+      {name:'TTF',group:'energy',symbol:'ICEENDEX:TFM1!',detail:'Future TTF · contrat continu ICE Endex · €/MWh',te:'https://tradingeconomics.com/commodity/eu-natural-gas'},
+      {name:'LNG JKM',group:'energy',symbol:'NYMEX:JKM1!',detail:'Future JKM Platts · contrat continu NYMEX · $/MMBtu',te:'https://tradingeconomics.com/commodity/liquefied-natural-gas-japan-korea'},
+      {name:'Cuivre LME',group:'metals',symbol:'LME:CA1!',detail:'Future cuivre LME · contrat mensuel continu · $/t ; distinct du benchmark 3 mois'},
+      {name:'Aluminium LME',group:'metals',symbol:'LME:AH1!',detail:'Future aluminium LME · contrat mensuel continu · $/t ; distinct du benchmark 3 mois'},
+      {name:'Or',group:'metals',symbol:'OANDA:XAUUSD',detail:'Cours indicatif OANDA · $/oz',strip:true},
+      {name:'Blé US',group:'agri',symbol:'CBOT:ZW1!',detail:'Future blé Chicago SRW · contrat continu CBOT · cents US/bu'},
+      {name:'Blé France',group:'agri',symbol:'EURONEXT:EBM1!',detail:'Future blé meunier MATIF · contrat continu Euronext · €/t'},
+      {name:'Maïs US',group:'agri',symbol:'CBOT:ZC1!',detail:'Future maïs · contrat continu CBOT · cents US/bu'},
+      {name:'Maïs France',group:'agri',symbol:'EURONEXT:EMA1!',detail:'Future maïs MATIF · contrat continu Euronext · €/t'},
+      {name:'Café',group:'agri',symbol:'ICEUS:KC1!',detail:'Future café Arabica · contrat continu ICE US · cents US/lb'},
+      {name:'Cacao',group:'agri',symbol:'ICEUS:CC1!',detail:'Future cacao New York · contrat continu ICE US · $/t'},
+      {name:'EURUSD',group:'fx',symbol:'OANDA:EURUSD',detail:'Change indicatif OANDA · USD pour 1 EUR',strip:true},
+      {name:'EURGBP',group:'fx',symbol:'OANDA:EURGBP',detail:'Change indicatif OANDA · GBP pour 1 EUR'},
+      {name:'EURJPY',group:'fx',symbol:'OANDA:EURJPY',detail:'Change indicatif OANDA · JPY pour 1 EUR'}
+    ].map(choice=>({...choice,url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(choice.symbol)}));
+    let marketGroup = 'energy';
     function embed(container, scriptUrl, config, fallback) {
       container.replaceChildren();
       const frame = line('', 'div', 'tradingview-widget-container');
@@ -155,7 +170,7 @@
     }
     function renderLive() {
       const box = document.getElementById('live-strip');box.replaceChildren();
-      for (const choice of charts) {
+      for (const choice of charts.filter(choice=>choice.strip)) {
         const tile = line('', 'article', 'live-tile');
         const title=line('', 'div', 'live-title');title.append(line('','i'),line(choice.name,'span'));
         const widget = line('Chargement du cours…', 'div', 'widget');
@@ -178,11 +193,15 @@
     function renderChart(index = 0) {
       marketChartIndex=index;
       const choice = charts[index];
-      document.getElementById('market-chart-title').textContent = choice.name + ' · indicatif OANDA';
+      document.getElementById('market-chart-title').textContent = choice.name + ' · ' + (choice.group==='fx'?'change':choice.symbol.startsWith('OANDA:')?'indicatif':'future');
       document.getElementById('market-chart-link').href = choice.url;
-      document.querySelectorAll('#chart-picks button').forEach((button, i) => {
-        button.classList.toggle('active', i === index);
-        button.setAttribute('aria-pressed', String(i === index));
+      const caption=document.getElementById('market-chart-caption');caption.replaceChildren(line(choice.detail+' · délai affiché par TradingView. ','span'));
+      const external=line('Ouvrir le graphique fournisseur ↗','a');external.href=choice.url;external.target='_blank';external.rel='noopener noreferrer';caption.append(external);
+      if(choice.te){const te=line('Trading Economics ↗','a');te.href=choice.te;te.target='_blank';te.rel='noopener noreferrer';caption.append(line(' · ','span'),te);}
+      document.querySelectorAll('#chart-picks button').forEach(button => {
+        const active=Number(button.dataset.index)===index;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
       });
       if (marketChartMode === 'history') {renderMarketHistory(); return;}
       embed(document.getElementById('market-chart'),
@@ -191,13 +210,22 @@
          theme:'dark',style:'1',locale:'fr',allow_symbol_change:true,
          hide_top_toolbar:false,support_host:'https://www.tradingview.com'}, () => {
           const box=document.getElementById('market-chart');
-          box.replaceChildren(line('Le cours du fournisseur n’a pas chargé. Utilise « Historique publié » pour consulter les données embarquées.','p','empty'));
+          box.replaceChildren(line('Le graphique intégré n’est pas disponible pour '+choice.name+'. Le lien fournisseur reste accessible ; aucun autre instrument n’est substitué.','p','empty'));
+          const link=line('Ouvrir '+choice.name+' ↗','a','button');link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';box.append(link);
         });
     }
-    function renderQuotes() {
+    function renderChartPicks() {
+      const groups=document.getElementById('chart-groups');groups.replaceChildren();
+      for(const [id,label] of [['energy','Énergie'],['metals','Métaux'],['agri','Agriculture'],['fx','FX']]){
+        const button=line(label,'button');button.type='button';button.classList.toggle('active',marketGroup===id);button.setAttribute('aria-pressed',String(marketGroup===id));
+        button.addEventListener('click',()=>{marketGroup=id;renderChartPicks();renderChart(charts.findIndex(choice=>choice.group===id));});groups.append(button);
+      }
       const picks = document.getElementById('chart-picks');picks.replaceChildren();
-      charts.forEach((choice,index)=>{const button=line(choice.name,'button');button.type='button';
+      charts.forEach((choice,index)=>{if(choice.group!==marketGroup)return;const button=line(choice.name,'button');button.type='button';button.dataset.index=String(index);button.title=choice.detail;
         button.addEventListener('click',()=>renderChart(index));picks.append(button);});
+    }
+    function renderQuotes() {
+      renderChartPicks();
       renderChart();renderGasPrices();
     }
     function renderGasPrices() {
@@ -539,10 +567,10 @@
       const host=document.getElementById('seasonal-physical');host.replaceChildren();
       if(selectedSector==='oil'){
         const card=line('','section','card');host.append(card);
-        renderSeasonalChart(card,{id:'brent-years',title:'Brent · clôtures spot par année',
+        renderSeasonalChart(card,{id:'brent-years',title:'Brent · prix spot quotidiens par année',
           points:snapshot.history?.oil_prices?.brent,unit:'$/bbl',allowPrevious:true,
-          subtitle:'2026 face à 2025, 2024 et 2023 · mêmes mois · clôtures spot EIA.',
-          note:'Les jours non publiés restent absents. Le repère blanc est la dernière clôture disponible ; les cases comparent la même date, ou le dernier jour ouvré précédent.',
+          subtitle:'2026 face à 2025, 2024 et 2023 · mêmes mois · prix spot publiés par l’EIA.',
+          note:'Les jours non publiés restent absents. Le repère blanc est le dernier prix spot disponible ; les cases comparent la même date, ou le dernier jour ouvré précédent.',
           sourceLabel:snapshot.sources?.oil_price_history?.provenance||'EIA · historique FRED',sourceUrl:'https://fred.stlouisfed.org/series/DCOILBRENTEU'});
       }else if(selectedSector==='gas'){
         const storage=line('','section','card'),ttf=line('','section','card');host.append(storage,ttf);
@@ -564,22 +592,26 @@
     function renderPowerSeasonal() {
       const host=document.getElementById('power-seasonal');
       const fr=powerPrices?.series?.fr||[],today=parisDay();
-      const current=[...fr].reverse().find(p=>Date.parse(p.at)<=Date.now()&&Date.parse(p.at)>Date.now()-3600000);
+      const current=window.CockpitPowerMetrics.summarize(fr.filter(p=>parisDay(p.at)===today));
       renderSeasonalChart(host,{id:'power-fr-years',eyebrow:'SPOT ÉLECTRICITÉ · REPÈRE HISTORIQUE',
         title:'Power France · aujourd’hui face aux trois années précédentes',
-        points:snapshot.history?.power_prices_daily,unit:'€/MWh',maxGap:2,hoverTolerance:0,
-        reference:current?{date:today,value:current.value}:null,
-        referenceLabel:current?'Créneau livré · '+parisTime(current.at):null,
+        points:(snapshot.history?.power_prices_daily||[]).filter(p=>p.date<=today),unit:'€/MWh',maxGap:2,hoverTolerance:0,
+        reference:current?{date:today,value:current.mean}:null,
+        referenceLabel:current?'Moyenne du jour · '+period(today):null,
         subtitle:'2026, 2025, 2024, 2023 · courbes de prix day-ahead moyens de chaque journée de livraison.',
-        note:'Le repère blanc est le prix day-ahead du créneau actuel. Les courbes et les cases montrent des moyennes de journées complètes, pondérées par durée, y compris les jours de 23 ou 25 h. Ces repères ont des horizons différents.',
+        note:'Le repère blanc, les courbes et les cases comparent des moyennes day-ahead de journées complètes, pondérées par durée, y compris les jours de 23 ou 25 h. Le prix du créneau en cours est affiché séparément en haut.',
         sourceLabel:'Fraunhofer ISE / Bundesnetzagentur · SMARD · CC BY 4.0',sourceUrl:'https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=FR'});
     }
 
     function renderTrend() {
       const history = snapshot.history || {};
-      const pairs = selectedSector === 'oil' ?
-        [['Stocks brut US · millions de barils · 26 semaines',history.oil_crude],null] :
-        selectedSector === 'gas' ? [
+      const stockHost=document.getElementById('oil-stock-seasonal');stockHost.hidden=selectedSector!=='oil';
+      if(selectedSector==='oil')renderSeasonalChart(stockHost,{id:'oil-stock-years',title:'Stocks commerciaux de brut US · quatre années',
+        points:history.oil_crude,unit:'M bbl',maxGap:10,hoverTolerance:4,allowPrevious:true,
+        subtitle:'2026, 2025, 2024, 2023 · observations hebdomadaires EIA, hors réserve stratégique.',
+        note:'Mêmes mois et même échelle. Le survol prend l’observation hebdomadaire la plus proche, à quatre jours maximum ; aucune valeur quotidienne n’est inventée.',
+        sourceLabel:'EIA WPSR · stocks commerciaux US hors SPR',sourceUrl:'https://www.eia.gov/petroleum/supply/weekly/'});
+      const pairs = selectedSector === 'gas' ? [
           ['GNL France · émission GWh/j · données GIE',history.lng_fr_sendout],null] : [null,null];
       for (const [index, pair] of pairs.entries()) {
         const suffix = index ? '-two' : '';
@@ -611,7 +643,7 @@
         card.append(duo); return;
       }
       if (selectedSector === 'oil' && history.oil_prices) {
-        title = 'Brent vs WTI · 12 mois · clôtures spot officielles';
+        title = 'Brent vs WTI · 12 mois · prix spot officiels';
         const cutoff=Date.now()-365*86400000;
         a=(history.oil_prices.brent||[]).filter(p=>Date.parse(p.date)>=cutoff);
         b=(history.oil_prices.wti||[]).filter(p=>Date.parse(p.date)>=cutoff);
@@ -885,6 +917,14 @@
       const reading = document.getElementById('power-price-reading');
       const context = document.getElementById('power-price-context');
       const licence = document.getElementById('power-price-license');
+      const compare=powerPriceZones[powerCompareZone];
+      document.getElementById('power-comparison-title').textContent='France vs '+compare.label+' · enchère day-ahead';
+      document.getElementById('power-comparison-label').textContent=compare.label;
+      const marketPicks=document.getElementById('power-market-picks');marketPicks.replaceChildren();
+      for(const [zone,definition] of Object.entries(powerPriceZones)){
+        const button=line(definition.label,'button');button.type='button';button.setAttribute('aria-pressed',String(zone===powerCompareZone));
+        button.addEventListener('click',()=>{powerCompareZone=zone;renderPowerPrices();refreshPowerDirect();});marketPicks.append(button);
+      }
       const hero = document.getElementById('power-now-value');
       const heroTime = document.getElementById('power-now-delivery');
       const heroDelta = document.getElementById('power-now-delta');
@@ -900,7 +940,7 @@
       const series = powerPrices?.series || {};
       const fr = Array.isArray(series.fr) ? series.fr.filter(point => Number.isFinite(point.value) &&
         Number.isFinite(Date.parse(point.at))) : [];
-      const de = Array.isArray(series.de) ? series.de.filter(point => Number.isFinite(point.value) &&
+      const de = Array.isArray(series[powerCompareZone]) ? series[powerCompareZone].filter(point => Number.isFinite(point.value) &&
         Number.isFinite(Date.parse(point.at))) : [];
       renderMarketPowerPulse();
       if (!fr.length) {
@@ -913,8 +953,8 @@
         reading.textContent = ''; return;
       }
       const attribution = powerPrices.licence?.fr;
-      licence.textContent = attribution && attribution === powerPrices.licence?.de ?
-        'Licence et attribution déclarées pour France et DE-LU : ' + attribution + '. ' :
+      licence.textContent = attribution && attribution === powerPrices.licence?.[powerCompareZone] ?
+        'Licence et attribution déclarées pour France et '+compare.label+' : ' + attribution + '. ' :
         'Licence et attribution déclarées par la source : ' + (attribution || 'à vérifier') + '. ';
       for (const [days,label] of [[2,'48 h'],[7,'7 j'],[30,'30 j'],[365,'1 an']]) {
         const button = line(label,'button'); button.type='button';
@@ -970,7 +1010,7 @@
         [nextPublished?'Demain vs aujourd’hui':'Aujourd’hui vs hier',shownMean!==null&&compareMean!==null?
           (shownMean>=compareMean?'+':'')+number(shownMean-compareMean,2)+' €/MWh':'Comparaison en attente',
           'Moyennes des journées de livraison'],
-        ['France − DE-LU · maintenant',current&&counterpart?
+        ['France − '+compare.label+' · maintenant',current&&counterpart?
           number(current.value-counterpart.value,2)+' €/MWh':'Créneau non reçu',
           current&&counterpart?'Même livraison · positif = France plus chère':'Dernière synchronisation à relancer'],
         [nextPublished?'Demain · point haut':'Aujourd’hui · point haut',shownPeak?number(shownPeak.value,2)+' €/MWh':'Non publié',
@@ -1001,7 +1041,7 @@
       const pad=Math.max(10,(high-low)*.12);low-=pad;high+=pad;
       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('viewBox','0 0 720 225');svg.setAttribute('preserveAspectRatio','none');
-      svg.setAttribute('role','img');svg.setAttribute('aria-label','Prix day-ahead France et DE-LU en euros par MWh');
+      svg.setAttribute('role','img');svg.setAttribute('aria-label','Prix day-ahead France et '+compare.label+' en euros par MWh');
       const add=(tag,attrs)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
         for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));svg.append(el);return el;};
       const t0=Math.min(Date.parse(f[0].at),d.length?Date.parse(d[0].at):Infinity);
@@ -1030,10 +1070,11 @@
       add('text',{x:55,y:218}).textContent=parisTime(t0).replace(' · Paris','');
       add('text',{x:585,y:218}).textContent=parisTime(t1).replace(' · Paris','');
       chart.append(svg);
-      meta.textContent='France (vert) · DE-LU (orange) · même échelle €/MWh · '+f.length+
+      meta.textContent='France (vert) · '+compare.label+' (orange) · même échelle €/MWh · '+f.length+
         ' périodes France affichées · première donnée '+parisTime(fr[0].at)+
         ' · dernière livraison '+parisTime(fr[fr.length-1].at)+
-        (snapshot.sources?.power_price_fr?.status==='error'?' · source en erreur : archive':'');
+        (snapshot.sources?.power_price_fr?.status==='error'?' · source en erreur : archive':'')+
+        (!d.length?' · '+compare.label+' : données indisponibles pour cette période':' · '+d.length+' périodes du marché comparé');
       const rte = snapshot.history?.power_fr || [];
       const observed = rte[rte.length-1];
       const direction=average!==null&&todayAverage!==null ? average-todayAverage : null;
@@ -1042,7 +1083,7 @@
         (direction>=0?'+':'')+number(direction,2)+' €/MWh face à aujourd’hui). '+
         (peak?'Point haut '+number(peak.value,2)+' €/MWh à '+parisTime(peak.at)+'.':'') :
         shownMean!==null ? 'Aujourd’hui : '+number(shownMean,2)+' €/MWh en moyenne'+(compareMean!==null?' ('+(shownMean>=compareMean?'+':'')+number(shownMean-compareMean,2)+' €/MWh face à hier).':'.')+' Le profil de demain n’est pas encore reçu.' : 'Profil de livraison incomplet : aucune moyenne journalière publiée ici.';
-      evidence.textContent=(current&&counterpart ? 'France − DE-LU sur le créneau livré : '+
+      evidence.textContent=(current&&counterpart ? 'France − '+compare.label+' sur le créneau livré : '+
         (current.value-counterpart.value>=0?'+':'')+number(current.value-counterpart.value,2)+' €/MWh. ' : '')+
         (average!==null ? countNegative*interval+' minute(s) à prix négatif demain. ' : '')+
         'Prix de l’enchère, pas des transactions intraday en cours.';
@@ -1057,7 +1098,7 @@
       if(shownPeak&&shownMean!==null)addAlert(nextPublished?'POINTE DE DEMAIN':'POINTE D’AUJOURD’HUI',
         number(shownPeak.value,2)+' €/MWh','Livraison '+parisTime(shownPeak.at)+' · '+
           number(shownPeak.value-shownMean,1)+' €/MWh au-dessus de la moyenne',shownPeak.value-shownMean>=50);
-      if(current&&counterpart)addAlert('ÉCART FRANCE / DE-LU',
+      if(current&&counterpart)addAlert('ÉCART FRANCE / '+compare.label.toUpperCase(),
         (current.value-counterpart.value>=0?'+':'')+number(current.value-counterpart.value,2)+' €/MWh',
         'Même créneau de livraison · positif = France plus chère',Math.abs(current.value-counterpart.value)>=20);
       reading.textContent='Le prix day-ahead est fixé la veille pour chaque période de livraison. '+
@@ -1146,7 +1187,8 @@
             throw new Error('Prix '+zone+' incomplets');
           return {points,licence:data.license_info};
         };
-        const [fr,de]=await Promise.all([read('FR'),read('DE-LU')]);
+        const zones={fr:'FR',...Object.fromEntries(Object.entries(powerPriceZones).map(([key,value])=>[key,value.bzn]))};
+        const results=await Promise.allSettled(Object.entries(zones).map(async([key,bzn])=>({key,...await read(bzn)})));
         const merge=(old,incoming)=>{
           const cutoff=Date.now()-365*86400000,byTime=new Map();
           for(const row of [...(old||[]),...incoming]){
@@ -1156,9 +1198,13 @@
           }
           return [...byTime.values()].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
         };
-        powerPrices={...powerPrices,series:{fr:merge(powerPrices.series?.fr,fr.points),
-          de:merge(powerPrices.series?.de,de.points)},licence:{fr:fr.licence,de:de.licence},
-          live_checked_at:new Date().toISOString()};
+        const series={...powerPrices.series},licences={...powerPrices.licence};let franceVerified=false;
+        for(const result of results){if(result.status!=='fulfilled')continue;const item=result.value;
+          series[item.key]=merge(series[item.key],item.points);licences[item.key]=item.licence;
+          if(item.key==='fr')franceVerified=true;
+        }
+        powerPrices={...powerPrices,series,licence:licences,...(franceVerified?{live_checked_at:new Date().toISOString()}:{})};
+        if(!franceVerified)throw new Error('France indisponible ; autres marchés et archives conservés');
         renderPowerPrices();
       } catch(error) {
         console.warn('API prix directe indisponible, archive conservée :',error);
@@ -1214,7 +1260,7 @@
         snapshot.history.power_fr=points.slice(-96);
         snapshot.sources.rte_power={status:'ok',as_of:latest.at,checked_at:new Date().toISOString(),
           url:'https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/',direct:true};
-        const values={power_load:['Demande France',latest.load],power_gaz:['Gaz électrique',latest.gaz],
+        const values={power_load:['Demande France',latest.load],power_gaz:['Gaz électrique',latest.gaz],power_nucleaire:['Nucléaire',latest.nucleaire],
           power_eolien:['Éolien',latest.eolien],power_solaire:['Solaire',latest.solaire],
           power_exchange:['Solde des échanges physiques',latest.ech_physiques],
           power_residual:['Demande résiduelle indicative',latest.load-latest.eolien-latest.solaire],
@@ -1247,16 +1293,19 @@
       document.getElementById('power-updated').textContent = checked ?
         (source.direct?'RTE vérifié : ':'Instantané : ')+parisTime(checked) : 'Instantané local';
       const picks = [
-        ['power_load', 'consommation observée'],
-        ['power_gaz', 'production électrique au gaz'],
-        ['power_exchange', 'négatif : export / positif : import'],
-        ['power_residual', 'calcul : demande − éolien − solaire']
+        ['power_exchange', 'solde physique net', 'Imports / exports nets'],
+        ['power_load', 'consommation observée', 'Consommation'],
+        ['power_nucleaire', 'production électrique observée', 'Nucléaire'],
+        ['power_eolien', 'production électrique observée', 'Éolien'],
+        ['power_solaire', 'production électrique observée', 'Solaire'],
+        ['power_residual', 'calcul : demande − éolien − solaire', 'Demande résiduelle']
       ];
-      for (const [id, hint] of picks) {
+      for (const [id, hint, label] of picks) {
         const item = byId[id];
         const card = line('', 'article', 'card power-card');
-        card.append(line(item?.label || id, 'small'));
-        card.append(line(item ? number(item.value, 0) + ' MW' : '—', 'strong'));
+        card.append(line(label, 'small'));
+        card.append(line(item ? number((id==='power_exchange'?Math.abs(item.value):item.value)/1000, 2) + ' GW' : '—', 'strong'));
+        if(id==='power_exchange'&&item)card.append(line(item.value<0?'Exportations nettes':item.value>0?'Importations nettes':'Équilibre net','b'));
         card.append(line(item ? (powerOld ? 'Archive · ' : '') + hint : 'Mesure en attente', 'span'));
         grid.append(card);
       }
@@ -1311,6 +1360,10 @@
       const mix = document.getElementById('power-mix');
       mix.replaceChildren();
       if (total) {
+        const overview=line('','div','mix-overview');overview.append(line(number(total/1000,2)+' GW','strong'),line('Production totale affichée','small'));
+        const stack=line('','div','mix-stack');stack.setAttribute('aria-label','Parts de la production par filière');
+        for(const [name,key,color] of fuels){const segment=line('','span');segment.style.width=latest[key]/total*100+'%';segment.style.background=color;segment.title=name+' · '+number(latest[key]/total*100,1)+' %';stack.append(segment);}
+        mix.append(overview,stack);
         for (const [name, key, color] of fuels) {
           const row = line('', 'div', 'power-mix-row');
           row.append(line(name, 'span'));
@@ -1319,7 +1372,7 @@
           bar.style.width = Math.max(0, Math.min(100, latest[key] / total * 100)) + '%';
           bar.style.background = color;
           track.append(bar);
-          row.append(track, line(number(latest[key], 0), 'strong'));
+          row.append(track, line(number(latest[key]/1000,2)+' GW · '+number(latest[key]/total*100,1)+' %', 'strong'));
           mix.append(row);
         }
         document.getElementById('power-mix-time').textContent = 'Mesure : ' + parisTime(latest.at) + ' · RTE.';
@@ -1486,13 +1539,19 @@
       document.getElementById('market-native-chart').hidden=mode!=='history';
       for(const [id,value] of [['chart-live-mode','live'],['chart-history-mode','history']]){
         const button=document.getElementById(id);button.classList.toggle('active',mode===value);button.setAttribute('aria-pressed',String(mode===value));}
-      document.getElementById('chart-mode-note').textContent=mode==='history'?'Données datées · disponibles hors connexion':'Cotation indicative du fournisseur';
+      document.getElementById('chart-mode-note').textContent=mode==='history'?'Données datées · disponibles hors connexion':'Instrument et délai du fournisseur';
       renderChart(marketChartIndex);
     }
     function renderMarketHistory() {
       const host=document.getElementById('market-native-chart'),choice=charts[marketChartIndex];host.replaceChildren();
-      const name={Brent:'brent',WTI:'wti'}[choice.name];
-      document.getElementById('market-chart-title').textContent=choice.name+' · historique spot publié';
+      const name=choice.history;
+      document.getElementById('market-chart-title').textContent=choice.name+' · historique publié';
+      if(choice.name==='TTF'){
+        const points=(snapshot.history?.ttf_monthly||[]).filter(p=>Date.parse(p.date)>=Date.now()-4*365*86400000);
+        const last=points.at(-1);if(last)host.append(line(number(last.value,2)+' €/MWh · moyenne '+period(last.date.slice(0,7)),'h2'));
+        const chart=line('','div');host.append(chart);timeChart(chart,{title:'TTF · moyennes mensuelles',unit:'€/MWh',series:[{name:'TTF mensuel',points}],maxGap:45});
+        host.append(line('Banque mondiale / BCE · moyennes mensuelles, distinctes du future en séance.','p'));return;
+      }
       if(!name){host.append(line('Pas d’historique quotidien vérifié pour cet instrument dans le cockpit.','p','empty'));return;}
       const points=(snapshot.history?.oil_prices?.[name]||[]).filter(p=>Date.parse(p.date)>=Date.now()-365*86400000);
       const last=points.at(-1);if(last)host.append(line(number(last.value,2)+' $/bbl · '+period(last.date),'h2'));

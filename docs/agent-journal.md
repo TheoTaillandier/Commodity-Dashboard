@@ -41,3 +41,11 @@ Date/heure Europe/Paris ; commit de départ ; constats nouveaux ; décision ; fi
 - Écart découvert en collecte : Crop Progress du 5 octobre existe, mais ses colonnes N−1 sont « (NA) ». L’ancien parseur rejetait également les valeurs actuelles. Correctif ciblé : conserver les conditions actuelles et les récoltes, laisser la comparaison absente, distinguer semaine mesurée du 4 octobre et publication du 5. Tests ancrés sur les lignes officielles ; 30 tests Python passent.
 - WASDE : la collecte a rencontré une erreur réseau ; chiffres octobre conservés. Ajout d’une unique nouvelle tentative pour une erreur de transport et garde empêchant une réponse plus ancienne d’écraser une mesure récente.
 - La dernière collecte du correctif agricole reste à vérifier avant d’attester le résultat de cette source.
+
+## 2026-10-13 — Modifications demandées, validation sur branche
+- Départ : main 79e44fcec5936544ced42a16067be0eee3bcc4f7. Reprise des sources existantes, sans refonte complète.
+- Marchés : catégories et 17 références sélectionnables ; futures continus identifiés, LME distinct de COMEX et du benchmark 3 mois ; liens TTF/JKM Trading Economics sans abonnement.
+- Physique pétrole : Brent annuel en premier, Brent/WTI spot 12 mois en deuxième, stocks US hors SPR 2023–2026 en troisième ; 196 observations EIA réellement reçues.
+- Power : comparaisons annuelles et bilan physique remontés ; parts du mix/GW ; imports/exports, nucléaire, éolien et solaire mis en évidence. Comparateurs DE-LU/Belgique/Italie du Nord ; deux nouveaux flux CC BY 4.0 vérifiés. Repère annuel quotidien comparable à l’historique quotidien.
+- Contrôles locaux : tests Python et syntaxe JS ; contrôle navigateur à vérifier par GitHub Actions avant publication main. Le téléchargement de Chromium dans cet environnement échoue ; le workflow dédié sert à la vérification desktop/mobile.
+- Limite : la sélection d’un symbole LME/MATIF/ICE est disponible, mais chaque intégration en séance reste soumise aux droits des widgets TradingView ; liens source permanents, aucune substitution de prix.

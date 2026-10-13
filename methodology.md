@@ -58,3 +58,11 @@ Les sources HTML, CSS et JavaScript sont maintenues dans `app/`. Le compilateur 
 Les graphiques SVG natifs montrent des axes numériques, unités, dates et valeurs au survol. Les ruptures de collecte restent visibles. La page Marchés propose un historique publié qui fonctionne sans widgets externes. Les tableaux physiques distinguent valeur, comparaison, période et commentaire ; aucune causalité instantanée n’est déduite automatiquement.
 
 `validate-ui.yml` vérifie le rendu dans Chromium aux largeurs 1440, 390 et 320 pixels, les tableaux, la navigation, les comparaisons annuelles et l’absence de débordement. Les captures et le rapport sont conservés sept jours dans les artefacts GitHub Actions. Les tests désactivent les appels externes pour contrôler réellement le repli hors connexion ; ils ne prétendent pas garantir la disponibilité des fournisseurs tiers.
+
+## Mise à jour du 13 octobre : comparaison et instruments
+
+Le graphique pétrole présente successivement Brent spot quotidien EIA sur quatre années, Brent/WTI spot sur douze mois, puis stocks commerciaux de brut US hors SPR sur quatre années (M bbl). Ces stocks sont hebdomadaires ; les dates mesurées sont conservées. Aucun stock quotidien ne se déduit de cette série.
+
+Power compare France à DE-LU, Belgique ou Italie du Nord sur des créneaux de livraison identiques. Un écart n’est calculé que si les deux prix sont disponibles à la même heure. Les courbes annuelles, le repère du jour et les cases utilisent les mêmes moyennes quotidiennes pondérées, distinctes du prix du créneau actuel. Le mix décrit les parts des filières françaises affichées ; il exclut les imports du dénominateur. Les puissances sont converties de MW en GW par division par 1000 ; un solde négatif indique des exports nets.
+
+Les graphiques externes de Marchés affichent futures continus, cours indicatifs ou change selon la référence sélectionnée. Les contrats mensuels continus LME ne représentent pas les prix Official Cash/3 mois. Une série visible sur TradingView ne garantit pas son accès dans le widget gratuit. Les liens fournisseur et la référence restent affichés en cas d’accès refusé ; aucun historique non vérifié n’est fabriqué.

@@ -59,6 +59,36 @@ WASDE - 675 - 24
 
 
 class PublicationParsingTest(unittest.TestCase):
+    def test_crude_history_preserves_four_years_excludes_suppression_and_future(self):
+        from scripts.update_data import parse_oil_history
+        from datetime import timedelta
+        today=date(2026,10,13)
+        rows=[{'date':(date(2022,12,30)+timedelta(weeks=i)).isoformat(),
+               'value':400000+i,'suppression_flag':None} for i in range(205)]
+        rows += [{'date':'2026-10-10','value':450000,'suppression_flag':'s'},
+                 {'date':'2026-10-11','value':900000,'suppression_flag':None},
+                 {'date':'2026-10-12','value':None,'suppression_flag':None}]
+        raw=json.dumps({'data':{'U.S.':{'time_series':rows}},'metadata':{'release_date':'2026-10-07'}}).encode()
+        result=parse_oil_history(raw,today)
+        self.assertEqual({p['date'][:4] for p in result['points']},{'2023','2024','2025','2026'})
+        self.assertGreater(len(result['points']),190)
+        self.assertEqual(result['points'][0]['value'],400.001)
+        self.assertNotIn('2026-10-10',[p['date'] for p in result['points']])
+        self.assertTrue(all(p['date']<=today.isoformat() for p in result['points']))
+        with self.assertRaisesRegex(ValueError,'invalid'):
+            parse_oil_history(raw,date(2027,2,1))
+
+    def test_comparator_failure_keeps_other_markets_and_licensed_archive(self):
+        now=datetime(2026,10,13,tzinfo=timezone.utc)
+        point={'at':'2026-10-13T00:00:00+00:00','value':77}
+        previous={'series':{'fr':[point],'be':[point]},'licence':{'fr':'CC BY 4.0','be':'CC BY 4.0'}}
+        merged=merge_power_prices(previous,{'power_price_be':OSError('offline'),
+            'power_price_it_north':{'points':[{**point,'value':100}],'licence':'CC BY 4.0'}},now)
+        self.assertEqual(merged['series']['be'],[point])
+        self.assertEqual(merged['series']['fr'],[point])
+        self.assertEqual(merged['series']['it_north'][0]['value'],100)
+        self.assertEqual(merged['licence']['be'],'CC BY 4.0')
+
     def test_power_day_ahead_requires_explicit_licence_and_paired_delivery_times(self):
         from datetime import timedelta
         now = datetime(2026, 9, 28, 15, tzinfo=timezone.utc)
