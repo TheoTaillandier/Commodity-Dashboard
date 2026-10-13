@@ -149,7 +149,13 @@
       {name:'EURUSD',group:'fx',symbol:'OANDA:EURUSD',detail:'Change indicatif OANDA · USD pour 1 EUR',strip:true},
       {name:'EURGBP',group:'fx',symbol:'OANDA:EURGBP',detail:'Change indicatif OANDA · GBP pour 1 EUR'},
       {name:'EURJPY',group:'fx',symbol:'OANDA:EURJPY',detail:'Change indicatif OANDA · JPY pour 1 EUR'}
-    ].map(choice=>({...choice,url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(choice.symbol)}));
+      ,{name:'TTF indicatif',group:'energy',symbol:'CAPITALCOM:TRNLTTFM1!',detail:'Cours dérivé indicatif Capital.com sur future TTF · contrat continu · €/MWh',kind:'indicatif'}
+      ,{name:'Blé indicatif',group:'agri',symbol:'OANDA:WHEATUSD',detail:'CFD indicatif OANDA sur blé · unité affichée par le fournisseur',kind:'indicatif'}
+      ,{name:'Maïs indicatif',group:'agri',symbol:'OANDA:CORNUSD',detail:'CFD indicatif OANDA sur maïs · unité affichée par le fournisseur',kind:'indicatif'}
+      ,{name:'Café indicatif',group:'agri',symbol:'CAPITALCOM:COFFEE',detail:'CFD indicatif Capital.com sur café US · unité affichée par le fournisseur',kind:'indicatif'}
+      ,{name:'Cacao indicatif',group:'agri',symbol:'CAPITALCOM:COCOA',detail:'CFD indicatif Capital.com sur cacao US · unité affichée par le fournisseur',kind:'indicatif'}
+    ].map(choice=>({...choice,url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(choice.symbol),
+      restricted:['ICEENDEX:TFM1!','NYMEX:JKM1!','LME:CA1!','LME:AH1!','CBOT:ZW1!','CBOT:ZC1!','ICEUS:KC1!','ICEUS:CC1!'].includes(choice.symbol)}));
     let marketGroup = 'energy';
     function embed(container, scriptUrl, config, fallback) {
       container.replaceChildren();
@@ -193,7 +199,7 @@
     function renderChart(index = 0) {
       marketChartIndex=index;
       const choice = charts[index];
-      document.getElementById('market-chart-title').textContent = choice.name + ' · ' + (choice.group==='fx'?'change':choice.symbol.startsWith('OANDA:')?'indicatif':'future');
+      document.getElementById('market-chart-title').textContent = choice.name + ' · ' + (choice.group==='fx'?'change':choice.kind|| (choice.symbol.startsWith('OANDA:')?'indicatif':'future'));
       document.getElementById('market-chart-link').href = choice.url;
       const caption=document.getElementById('market-chart-caption');caption.replaceChildren(line(choice.detail+' · délai affiché par TradingView. ','span'));
       const external=line('Ouvrir le graphique fournisseur ↗','a');external.href=choice.url;external.target='_blank';external.rel='noopener noreferrer';caption.append(external);
@@ -204,6 +210,17 @@
         button.setAttribute('aria-pressed', String(active));
       });
       if (marketChartMode === 'history') {renderMarketHistory(); return;}
+      if(choice.restricted){
+        const box=document.getElementById('market-chart');box.replaceChildren();
+        const panel=line('','div','market-external-access');panel.append(line(choice.name,'h3'),
+          line('Cette référence est consultable chez le fournisseur. Son intégration dans le widget gratuit est refusée.','p'));
+        const link=line('Ouvrir le graphique '+choice.name+' ↗','a','button');link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);
+        if(choice.te){const link=line('Consulter Trading Economics ↗','a','button');link.href=choice.te;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
+        const alternative={TTF:'TTF indicatif','Blé US':'Blé indicatif','Maïs US':'Maïs indicatif',Café:'Café indicatif',Cacao:'Cacao indicatif'}[choice.name];
+        if(alternative){const button=line('Voir '+alternative+' dans le cockpit','button','button');button.type='button';button.addEventListener('click',()=>renderChart(charts.findIndex(c=>c.name===alternative)));panel.append(button,
+          line('Alternative clairement identifiée : un cours dérivé indicatif, distinct de la référence officielle.','small'));}
+        box.append(panel);return;
+      }
       embed(document.getElementById('market-chart'),
         'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js',
         {autosize:true,symbol:choice.symbol,interval:'60',timezone:'Europe/Paris',

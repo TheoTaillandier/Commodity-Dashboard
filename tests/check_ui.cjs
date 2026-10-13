@@ -26,9 +26,9 @@ const http=require('node:http');
       assert.ok(await page.locator('#market-native-chart svg').count(),'Market native fallback chart');
       await page.locator('#chart-live-mode').click();
       for(const [group,names] of Object.entries({
-        'Énergie':['Brent','WTI','Gaz US','TTF','LNG JKM'],
+        'Énergie':['Brent','WTI','Gaz US','TTF','LNG JKM','TTF indicatif'],
         'Métaux':['Cuivre LME','Aluminium LME','Or'],
-        'Agriculture':['Blé US','Blé France','Maïs US','Maïs France','Café','Cacao'],
+        'Agriculture':['Blé US','Blé France','Maïs US','Maïs France','Café','Cacao','Blé indicatif','Maïs indicatif','Café indicatif','Cacao indicatif'],
         'FX':['EURUSD','EURGBP','EURJPY']
       })){
         await page.locator('#chart-groups').getByRole('button',{name:group,exact:true}).click();

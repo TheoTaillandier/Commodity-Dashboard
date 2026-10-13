@@ -43,3 +43,6 @@ EEX expose des fichiers NGP téléchargeables mais la republication automatique 
 ### Instruments du graphique
 
 TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, blé/maïs CBOT et MATIF, café Arabica/cacao ICE US et EURUSD/EURGBP/EURJPY sont sélectionnables avec leur symbole, unité et définition. Les futures continus mensuels LME ne sont pas les benchmarks LME 3 mois. La disponibilité dans le widget dépend des accords du fournisseur ; le lien externe reste affiché. Aucun cours d’un autre marché n’est substitué. Les nouveaux widgets Trading Economics nécessitent un abonnement : seuls des liens vers les séries TTF/JKM sont fournis, sans achat ni clé exposée.
+
+### Vérification réelle des widgets du 13 octobre
+Les widgets publics refusent TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, CBOT blé/maïs et ICE US café/cacao, avec notification « Symbole disponible uniquement sur TradingView ». MATIF blé/maïs, Brent et EURJPY ont chargé en ligne. Les références refusées proposent un accès externe explicite. Des graphiques indicatifs distincts TTF Capital.com, blé/maïs OANDA, café/cacao Capital.com sont proposés séparément et restent à vérifier dans le dernier contrôle fournisseur. Aucun benchmark officiel n’est remplacé silencieusement.

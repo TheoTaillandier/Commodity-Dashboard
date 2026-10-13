@@ -70,3 +70,6 @@ h1,h2,h3,p{overflow-wrap:break-word}h1{letter-spacing:-.045em;line-height:1.15}h
 #oil-stock-seasonal{margin:16px 0}
 .power-market-controls{margin-bottom:8px}
 @media(max-width:600px){.power-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.power-mix-row{grid-template-columns:70px minmax(15px,1fr) 125px;gap:5px}.mix-overview{align-items:flex-start;flex-direction:column}.chart-mode{flex-wrap:wrap}.chart-mode span{width:100%;margin-left:0}.chart{height:780px}.power-legend-inline{flex-wrap:wrap}}
+.market-external-access{padding:30px;display:flex;flex-direction:column;align-items:flex-start;gap:15px;max-width:100%}
+.market-external-access h3{margin:0;font-size:22px}.market-external-access p,.market-external-access small{color:var(--muted);line-height:1.7;max-width:550px}.market-external-access .button{border:1px solid var(--border);white-space:normal;color:var(--accent);background:var(--surface-2)}
+@media(max-width:600px){.market-external-access{padding:18px}}
