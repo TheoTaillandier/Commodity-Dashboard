@@ -39,7 +39,20 @@
     if(minutes<expected*.99)return null;
     return {day,mean:total/minutes,minutes,expectedMinutes:expected,negativeMinutes,step};
   }
-  const api={summarize,parisDay};
+  function mergePriceArchive(archive,current) {
+    if(!(Date.parse(current.live_checked_at)>Date.parse(archive.generated_at)))return archive;
+    const series={};
+    for(const zone of new Set([...Object.keys(archive.series||{}),...Object.keys(current.series||{})])){
+      const byTime=new Map();
+      for(const p of [...(archive.series?.[zone]||[]),...(current.series?.[zone]||[])]){
+        const t=Date.parse(p.at);
+        if(Number.isFinite(t)&&Number.isFinite(p.value))byTime.set(t,p);
+      }
+      series[zone]=[...byTime.values()].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+    }
+    return {...archive,series,licence:{...archive.licence,...current.licence},live_checked_at:current.live_checked_at};
+  }
+  const api={summarize,parisDay,mergePriceArchive};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   else window.CockpitPowerMetrics=api;
 })();

@@ -53,7 +53,7 @@ const assert=require('node:assert/strict');
     console.log('LIVE QUOTES: '+JSON.stringify(quoteReports));
     assert.equal(quoteReports.length,5,'All five additional quote widgets are observed');
     for(const report of quoteReports)assert.ok(report.hasPrice&&!report.refused,'A real quoted price is visible for '+report.symbol);
-    for(const [group,name] of [['Énergie','Brent'],['Énergie','TTF'],['Énergie','LNG JKM'],['Métaux','Cuivre LME'],['Métaux','Aluminium LME'],['Agriculture','Blé France'],['Agriculture','Maïs France'],['Agriculture','Blé US'],['Agriculture','Café'],['FX','EURJPY'],['Agriculture','Blé indicatif'],['Agriculture','Maïs indicatif'],['Agriculture','Café indicatif'],['Agriculture','Cacao indicatif']]){
+    for(const [group,name] of [['Énergie','Brent'],['Énergie','TTF'],['Énergie','LNG JKM'],['Métaux','Cuivre LME'],['Métaux','Aluminium LME'],['Agriculture','Blé France'],['Agriculture','Maïs France'],['Agriculture','Blé US'],['Agriculture','Café'],['FX','EURJPY'],['Agriculture','Blé indicatif'],['Agriculture','Maïs indicatif'],['Agriculture','Café indicatif'],['Agriculture','Cacao indicatif'],['Métaux','Cuivre indicatif'],['Métaux','Aluminium indicatif']]){
       await page.locator('#chart-groups').getByRole('button',{name:group,exact:true}).click();
       await page.locator('#chart-picks').getByRole('button',{name,exact:true}).click();
       // Bound each provider observation, including a refusal or network failure.

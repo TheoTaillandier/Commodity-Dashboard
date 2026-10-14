@@ -73,3 +73,6 @@ h1,h2,h3,p{overflow-wrap:break-word}h1{letter-spacing:-.045em;line-height:1.15}h
 .market-external-access{padding:30px;display:flex;flex-direction:column;align-items:flex-start;gap:15px;max-width:100%}
 .market-external-access h3{margin:0;font-size:22px}.market-external-access p,.market-external-access small{color:var(--muted);line-height:1.7;max-width:550px}.market-external-access .button{border:1px solid var(--border);white-space:normal;color:var(--accent);background:var(--surface-2)}
 @media(max-width:600px){.market-external-access{padding:18px}}
+
+/* Compact access and optional analysis keep the primary facts visible. */
+.live-title{width:100%;border:0;background:transparent;color:var(--text);text-align:left;min-height:30px}.live-title:hover{color:var(--accent);background:var(--surface-2)}.live-footer{overflow-wrap:anywhere}.spread-panel{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}.market-more{margin-top:18px}.market-more .mini-grid{margin-top:12px}.price-links{align-items:start}.gas-source-link{padding:12px 15px}.gas-source-link p{font-size:11px;color:var(--muted);margin:8px 0}.power-brief-sub{max-width:100%}
