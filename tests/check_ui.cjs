@@ -35,9 +35,11 @@ const http=require('node:http');
       await page.getByRole('button',{name:'Historique publié',exact:true}).click();
       assert.ok(await page.locator('#market-native-chart svg').count(),'Market native fallback chart');
       await page.locator('#chart-live-mode').click();
+      await page.locator('#live-strip').getByRole('button',{name:'Afficher le graphique Aluminium',exact:true}).click();
+      assert.ok((await page.locator('#market-chart-title').innerText()).includes('Aluminium indicatif'),'Quote opens its actual CFD graph');
       for(const [group,names] of Object.entries({
         'Énergie':['Brent','WTI','Gaz US','TTF','LNG JKM'],
-        'Métaux':['Cuivre LME','Aluminium LME','Or'],
+        'Métaux':['Cuivre LME','Aluminium LME','Or','Cuivre indicatif','Aluminium indicatif'],
         'Agriculture':['Blé US','Blé France','Maïs US','Maïs France','Café','Cacao','Blé indicatif','Maïs indicatif','Café indicatif','Cacao indicatif'],
         'FX':['EURUSD','EURGBP','EURJPY']
       })){
@@ -77,16 +79,34 @@ const http=require('node:http');
             assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Brent annual, Brent/WTI, stocks order');
             assert.equal(await page.locator('#oil-stock-seasonal .year-line').count(),4,'Four actual years of crude inventories');
             assert.ok(!(await page.locator('#oil-stock-seasonal .seasonal-comparisons').innerText()).includes('Non publié'),'Four weekly comparisons use the closest comparable week');
+            await page.locator('#comparison-chart .spread-panel summary').click();
+            assert.equal(await page.locator('#comparison-chart .spread-panel svg').count(),1,'Brent/WTI spot spread is available');
+          }
+          if(sector==='agri'){
+            for(const [focus,label,expected] of [['fr','Grains France','FranceAgriMer'],['coffee','Café','USDA FAS'],['cocoa','Cacao','ICCO']]){
+              await page.locator('#agri-filters').getByRole('button',{name:label,exact:true}).click();
+              assert.ok((await page.locator('#metrics').innerText()).includes(expected),'Real '+label+' physical measurements');
+              assert.ok(await page.locator('#metrics tbody tr').count(),'Physical source values are present');
+              const width=await page.evaluate(()=>document.documentElement.scrollWidth);
+              assert.ok(width<=viewport.width+1,'Agricultural submarket overflow');
+              if(viewport.width!==320)await page.screenshot({path:path.join(output,[viewport.width,'physical',focus].join('-')+'.png'),fullPage:true});
+              reports.push({viewport,tab,sector,focus,scrollWidth:width});
+            }
+            await page.locator('#agri-filters').getByRole('button',{name:'Grains US',exact:true}).click();
           }
           if(tab==='power'){
             assert.equal(await page.locator('#power-grid article').count(),6,'Six physical indicators including exchanges');
             assert.ok(await page.locator('#power-mix .mix-stack span').count(),'Production mix shares');
+            assert.equal(await page.locator('#power-price-span').getByRole('button',{name:'1 an',exact:true}).count(),0,'No year option for a short price archive');
+            assert.equal(await page.locator('#power-span').getByRole('button',{name:'1 an',exact:true}).count(),0,'No year option for a short physical archive');
             for(const market of ['Belgique','Italie du Nord','DE-LU']){
               await page.locator('#power-market-picks').getByRole('button',{name:market,exact:true}).click();
               assert.ok((await page.locator('#power-comparison-title').innerText()).includes(market));
               assert.ok((await page.locator('#power-price-meta').innerText()).includes('périodes du marché comparé'),'Comparator has actual embedded data');
               assert.equal(await page.locator('#power-price-chart svg').count(),1);
             }
+            await page.locator('#power-spread-panel summary').click();
+            assert.equal(await page.locator('#power-spread-chart svg').count(),1,'Aligned delivery price spread is available');
             const positions=await page.evaluate(()=>['power-seasonal','power-grid','power-prices-panel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
             assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Annual and physical balance are above European comparison');
           }

@@ -46,3 +46,12 @@ TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, blé/maïs CBOT et MATIF, café 
 
 ### Vérification réelle des widgets du 13 octobre
 Les widgets publics refusent TTF ICE Endex, JKM NYMEX, cuivre/aluminium LME, CBOT blé/maïs et ICE US café/cacao, avec notification « Symbole disponible uniquement sur TradingView ». MATIF blé/maïs, Brent et EURJPY ont chargé en ligne. Les références refusées proposent un accès externe explicite. Les graphiques indicatifs blé/maïs OANDA et café/cacao Capital.com ont réellement chargé lors du contrôle fournisseur 38378069777. TTF et JKM en séance, cuivre/aluminium LME restent en accès externe ; le TTF mensuel embarqué reste consultable. Aucun benchmark officiel n’est remplacé silencieusement.
+
+## Améliorations du 14 octobre 2026
+- Synchronisation Power : les quatre zones et leurs valeurs directes récentes sont conservées. Les boutons de période suivent la couverture réelle.
+- Cotations : dix cartes conservées, unités visibles et clic sur le titre pour afficher le graphique correspondant ; cuivre et aluminium CFD séparés des références LME.
+- Analyse : spreads Brent−WTI spot et France−marché sélectionné, uniquement à dates/créneaux identiques, dans des panneaux dépliables. Marchés privilégie trois faits ; les doublons et accès gaz sans flux sont compactés.
+- Agriculture physique : Grains US, Grains France (Céré’Obs), Café (USDA FAS PS&D), Cacao (communiqué ICCO). Campagnes, dates de mesure et de publication distinguées. Collecteurs publics sans nouvelles clés.
+- Crop Progress : recherche des jours de publication, y compris mardi après jour férié. WASDE : repli vers l’archive officielle NAL ESMIS. Calendrier Crop Progress ajouté ; Céré’Obs annoncé avec date habituelle à confirmer.
+- Installation du collecteur : `pip install -r requirements.txt` (xlrd pour les tableaux Céré’Obs XLS). L’HTML reste autonome, aucune dépendance Python côté utilisateur.
+- Limites : cotations directes Capital.com et références LME/TTF/JKM non connectées sans accès/droits ; aucun nouvel abonnement activé. Les stocks mondiaux ICCO sont des estimations de campagne, pas des stocks livrables ICE.

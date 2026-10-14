@@ -7,6 +7,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'package.json'
+      - 'requirements.txt'
       - '.github/workflows/validate-ui.yml'
   workflow_dispatch:
 
@@ -27,6 +28,7 @@ jobs:
           node-version: '22'
       - name: Vérifier les données et compiler le HTML autonome
         run: |
+          pip install -r requirements.txt
           python -m unittest discover -s tests -v
           python scripts/build_dashboard.py
           node --check app/cockpit.js

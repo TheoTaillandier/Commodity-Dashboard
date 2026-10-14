@@ -768,18 +768,20 @@ def parse_crop_progress(raw: bytes, url: str, today: date) -> dict:
 
 def fetch_crop_progress(today: date) -> dict:
     """Use dated official release pages if the publication index is stale/broken."""
-    candidates = []
+    candidates = [CROP_PROGRESS_URL]
     monday = today - timedelta(days=today.weekday())
-    for offset in (0, 7, 14):
-        candidates.append(CROP_PROGRESS_URL + "/" + (monday - timedelta(days=offset)).isoformat())
-    candidates.append(CROP_PROGRESS_URL)
+    # Holiday releases may be on Tuesday. An older index must not stop the
+    # search before the actual dated publication of the current week.
+    for offset in range(8):
+        candidates.append(CROP_PROGRESS_URL + "/" + (today - timedelta(days=offset)).isoformat())
+    candidates.append(CROP_PROGRESS_URL + "/" + (monday - timedelta(days=7)).isoformat())
     reports = []
     for page in candidates:
         try:
             url = crop_progress_link(fetch(page))
             report = parse_crop_progress(fetch(url), url, today)
             reports.append(report)
-            if date.fromisoformat(report["published"]) >= monday - timedelta(days=7):
+            if date.fromisoformat(report["published"]) >= monday:
                 break
         except (OSError, ValueError):
             continue
@@ -891,6 +893,7 @@ def parse_wasde(raw: bytes, url: str) -> dict:
 
 
 def fetch_wasde(today: date) -> dict:
+    archive_page = None
     for month_delta in range(3):
         year = today.year
         month = today.month - month_delta
@@ -906,10 +909,25 @@ def fetch_wasde(today: date) -> dict:
                     if isinstance(error, HTTPError) or attempt == 1:
                         raise
                     sleep(1)
-        except HTTPError as error:
-            if error.code == 404:
-                continue
-            raise
+        except (HTTPError, URLError, ValueError):
+            # NAL ESMIS is the USDA's official archive, not a third-party price.
+            # Some runners receive 403/5xx from the legacy USDA endpoint.
+            root = "https://esmis.nal.usda.gov/publication/world-agricultural-supply-and-demand-estimates"
+            try:
+                if archive_page is None:
+                    archive_page = fetch(root).decode("utf-8", "replace")
+                filename = f"wasde{month:02d}{year % 100:02d}.txt"
+                links = re.findall(r'href=["\']([^"\']+\.txt)["\']', archive_page, re.I)
+                link = next((u for u in links if u.endswith('/'+filename) and '/sites/default/release-files/' in u), None)
+                if link:
+                    mirror = urljoin(root, unescape(link))
+                    if mirror.startswith("https://esmis.nal.usda.gov/sites/default/release-files/"):
+                        report = parse_wasde(fetch(mirror), mirror)
+                        if report['as_of'] == f'{year}-{month:02d}':
+                            return report
+            except (HTTPError, URLError, ValueError):
+                pass
+            continue
     raise ValueError("No WASDE report found for the last three months")
 
 
@@ -1171,6 +1189,13 @@ def verified_calendar(today: date) -> list[dict]:
                       date(2026, 11, 26): (date(2026, 11, 25), 12)}
     day = first
     while day <= last:
+        if day.weekday() == 0 and day <= date(2026, 11, 30):
+            release = day + timedelta(days=1) if day == date(2026,10,12) else day
+            add(release,16,0,'USDA · Crop Progress','État et avancement des cultures US',
+                'https://www.nass.usda.gov/Publications/Reports_by_Release_Day/index.php')
+        if day.weekday() == 4 and day <= date(2026,11,27):
+            add(day,0,0,'Céré’Obs · publication habituelle','Cultures françaises · date à confirmer, hors pause hivernale',
+                'https://cereobs.franceagrimer.fr/',day_only=True)
         if day.weekday() == 2:  # Wednesday
             release, hour = oil_exceptions.get(day, (day, 10))
             if release >= today:
@@ -1212,7 +1237,7 @@ def build_snapshot(previous: dict, results: dict, now: datetime) -> dict:
     for key in ("oil", "oil_flows", "oil_history", "oil_price_history", "gas", "wasde", "crop_progress", "news", "norway",
                 "brent", "wti", "henry", "gie", "gie_fr", "alsi", "alsi_fr",
                 "rte_power", "entsoe_fr", "entsoe_de", "power_price_fr", "power_price_de", "power_price_be", "power_price_it_north",
-                "power_seasonal", "ttf_monthly", "ttf_ngp"):
+                "power_seasonal", "ttf_monthly", "ttf_ngp", "cereobs", "coffee", "cocoa"):
         result = results.get(key)
         if isinstance(result, Exception):
             old = sources.get(key, {})
@@ -1309,6 +1334,7 @@ def eex_ngp_enabled() -> bool:
 def main() -> None:
     now = datetime.now(timezone.utc).replace(microsecond=0)
     previous = get_previous()
+    from scripts.physical_sources import fetch_cereobs, fetch_coffee, fetch_cocoa
     tasks = {
         "oil": lambda: parse_oil(fetch(OIL_URL)),
         "oil_flows": lambda: parse_oil_flows(fetch(OIL_FLOW_URL)),
@@ -1320,6 +1346,9 @@ def main() -> None:
         "wasde": lambda: fetch_wasde(now.date()),
         "crop_progress": lambda: fetch_crop_progress(now.date()),
         "news": lambda: news_result(fetch(NEWS_URL)),
+        "cereobs": lambda: fetch_cereobs(now.astimezone(PARIS).date()),
+        "coffee": lambda: fetch_coffee(now.astimezone(PARIS).date()),
+        "cocoa": lambda: fetch_cocoa(now.astimezone(PARIS).date()),
     }
     if eex_ngp_enabled():
         tasks["ttf_ngp"] = lambda: parse_ttf_ngp(fetch(TTF_NGP_URL), fetch(TTF_NGP_HISTORY_URL), now)

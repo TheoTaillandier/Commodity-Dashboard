@@ -14,6 +14,12 @@
     const sectors = {oil: 'Pétrole · cotations séparées des mesures physiques', gas: 'Gaz · France, Europe, GNL et États-Unis',
       agri: 'Agriculture · bilans USDA et état des cultures', metals: 'Métaux · offre, demande et stocks'};
     let selectedSector = 'oil';
+    let agriFocus='us';
+    function sectorItems() {
+      return metrics.filter(item=>item.sector===selectedSector && (selectedSector!=='agri'||
+        (agriFocus==='fr'?item.id.startsWith('ag_fr_'):agriFocus==='coffee'?item.id.startsWith('ag_coffee_'):
+         agriFocus==='cocoa'?item.id.startsWith('ag_cocoa_'):!/^ag_(fr|coffee|cocoa)_/.test(item.id))));
+    }
 
     function number(value, digits = 1) {
       return new Intl.NumberFormat('fr-FR', {maximumFractionDigits: digits, minimumFractionDigits: digits}).format(value);
@@ -34,8 +40,8 @@
       return (Date.now() - Date.parse(sourceDate + 'T12:00:00Z')) / 86400000;
     }
     function stale(item) {
-      const limit = /ag_(corn|soy)_(condition|harvest)/.test(item.id) ? 9 : item.id === 'oil_norway_liquids' ? 80 : item.id.startsWith('price_') ? 8 :
-        item.source?.startsWith('GIE') ? 4 : ({oil: 13, gas: 13, agri: 49, metals: 800}[item.sector] || 14);
+      const limit = item.max_age_days || (/ag_(corn|soy)_(condition|harvest)/.test(item.id) ? 9 : item.id === 'oil_norway_liquids' ? 80 : item.id.startsWith('price_') ? 8 :
+        item.source?.startsWith('GIE') ? 4 : ({oil: 13, gas: 13, agri: 49, metals: 800}[item.sector] || 14));
       return age(item) > limit;
     }
     function safeLink(url) {
@@ -44,7 +50,8 @@
         const hosts = ['www.eia.gov', 'ir.eia.gov', 'www.usda.gov', 'pubs.usgs.gov',
           'agsi.gie.eu', 'alsi.gie.eu', 'fred.stlouisfed.org', 'www.sodir.no', 'www.eex.com',
           'www.ice.com', 'www.tradingview.com', 'transparency.entsog.eu', 'esmis.nal.usda.gov',
-          'www.worldbank.org', 'www.energy-charts.info', 'api.energy-charts.info', 'data.ecb.europa.eu'];
+          'www.worldbank.org', 'www.energy-charts.info', 'api.energy-charts.info', 'data.ecb.europa.eu',
+          'www.fas.usda.gov','cereobs.franceagrimer.fr','www.icco.org'];
         return parsed.protocol === 'https:' && hosts.includes(parsed.hostname) ? parsed.href : null;
       } catch { return null; }
     }
@@ -91,14 +98,14 @@
       const labels = {brent: 'Brent spot', wti: 'WTI spot', henry: 'Henry Hub spot', ttf_ngp:'TTF spot',
         norway: 'Production Norvège',
         oil: 'EIA stocks pétrole', oil_flows: 'EIA flux pétrole', gas: 'EIA gaz US', wasde: 'USDA WASDE', crop_progress:'État & récoltes US',
-        news: 'Analyses EIA', gie: 'GIE stockage UE', gie_fr: 'GIE stockage France',
+        news: 'Analyses EIA', cereobs:'Céré’Obs France',coffee:'USDA café',cocoa:'ICCO cacao',gie: 'GIE stockage UE', gie_fr: 'GIE stockage France',
         alsi: 'GIE GNL UE', alsi_fr: 'GIE GNL France', metals: 'USGS métaux'};
       for (const [id, label] of Object.entries(labels)) {
         const source = snapshot.sources?.[id] || {};
         const sample = {brent:'price_brent',wti:'price_wti',henry:'price_henry',ttf_ngp:'price_ttf',
           norway:'oil_norway_liquids',
           oil:'oil_crude',oil_flows:'oil_imports',gas:'gas_us',wasde:'ag_corn_stocks',crop_progress:'ag_corn_harvest',
-          gie:'gas_eu',gie_fr:'gas_fr',alsi:'lng_eu_inventory',
+          cereobs:'ag_fr_corn_harvest',coffee:'ag_coffee_br_production',cocoa:'ag_cocoa_stocks',gie:'gas_eu',gie_fr:'gas_fr',alsi:'lng_eu_inventory',
           alsi_fr:'lng_fr_inventory',metals:'metal_copper'}[id];
         const hasValue = Boolean(sample && byId[sample]) || (id === 'news' && (snapshot.stories || []).length > 0);
         const status = source.status === 'ok' ? period(source.as_of || '') +
@@ -107,14 +114,21 @@
           source.status === 'structural' ? 'repère annuel' :
           source.status === 'manual' ? 'repère mensuel daté' :
           hasValue ? 'dernière valeur conservée' : 'source indisponible';
-        container.append(line(label + ' · ' + status, 'span',
-          'badge ' + (source.status === 'ok' && (!byId[sample] || !stale(byId[sample])) ? 'good' : 'warn')));
+        const badge=line(label + ' · ' + status, 'span',
+          'badge ' + (source.status === 'ok' && (!byId[sample] || !stale(byId[sample])) ? 'good' : 'warn'));
+        badge.title='Dernière vérification : '+(source.checked_at?parisTime(source.checked_at):'non renseignée')+
+          (source.published?' · Publication : '+period(source.published):'');container.append(badge);
       }
       const warnings=Object.values(snapshot.sources||{}).filter(src=>['error','needs_key'].includes(src.status)).length;
-      document.getElementById('source-summary').textContent='Qualité des sources · '+metrics.length+' mesures datées · '+warnings+' accès à vérifier';
+      const oldSources=new Set(metrics.filter(stale).map(item=>item.source)).size;
+      const licences=Object.values(snapshot.sources||{}).filter(src=>src.status==='needs_licence').length;
+      document.getElementById('source-summary').textContent='Qualité des sources · '+metrics.length+' mesures · '+warnings+' accès en erreur'+
+        (oldSources?' · '+oldSources+' source(s) ancienne(s)':'')+(licences?' · '+licences+' flux non connecté(s)':'');
       document.getElementById('updated').textContent = snapshot.generated_at ?
         'Collecte : ' + new Intl.DateTimeFormat('fr-FR', {dateStyle:'medium', timeStyle:'short', timeZone:'Europe/Paris'}).format(new Date(snapshot.generated_at)) + ' · Paris' :
         'Instantané local';
+      const collectedAge=(Date.now()-Date.parse(snapshot.generated_at||''))/3600000;
+      if(collectedAge>4)document.getElementById('updated').textContent+=' · instantané âgé de '+Math.floor(collectedAge)+' h';
     }
 
     function renderMini() {
@@ -153,6 +167,8 @@
       ,{name:'Maïs indicatif',group:'agri',symbol:'OANDA:CORNUSD',detail:'CFD indicatif OANDA sur maïs · $/bu',kind:'indicatif'}
       ,{name:'Café indicatif',group:'agri',symbol:'CAPITALCOM:COFFEE',detail:'CFD indicatif Capital.com sur café US · $/lb',kind:'indicatif'}
       ,{name:'Cacao indicatif',group:'agri',symbol:'CAPITALCOM:COCOA',detail:'CFD indicatif Capital.com sur cacao US · $/t',kind:'indicatif'}
+      ,{name:'Cuivre indicatif',group:'metals',symbol:'OANDA:XCUUSD',detail:'CFD indicatif OANDA sur cuivre · $/lb · distinct du benchmark LME',kind:'indicatif'}
+      ,{name:'Aluminium indicatif',group:'metals',symbol:'CAPITALCOM:ALUMINUM',detail:'CFD indicatif Capital.com sur aluminium · $/t · distinct du benchmark LME',kind:'indicatif'}
     ].map(choice=>({...choice,url:'https://www.tradingview.com/chart/?symbol='+encodeURIComponent(choice.symbol),
       restricted:['ICEENDEX:TFM1!','NYMEX:JKM1!','LME:CA1!','LME:AH1!','CBOT:ZW1!','CBOT:ZC1!','ICEUS:KC1!','ICEUS:CC1!'].includes(choice.symbol)}));
     let marketGroup = 'energy';
@@ -177,19 +193,25 @@
       const box = document.getElementById('live-strip');box.replaceChildren();
       const additional = [
         ['Blé indicatif','Blé US','OANDA'],['Maïs indicatif','Maïs US','OANDA'],
-        ['Café indicatif','Café','Capital.com'],['Cacao indicatif','Cacao','Capital.com']
+        ['Café indicatif','Café','Capital.com'],['Cacao indicatif','Cacao','Capital.com'],
+        ['Aluminium indicatif','Aluminium','Capital.com']
       ].map(([reference,name,provider])=>({...charts.find(choice=>choice.name===reference),name,provider}));
-      additional.push({name:'Aluminium',symbol:'CAPITALCOM:ALUMINUM',provider:'Capital.com',
-        detail:'CFD indicatif sur aluminium · distinct du benchmark LME officiel',
-        url:'https://www.tradingview.com/chart/?symbol=CAPITALCOM%3AALUMINUM'});
       for (const choice of [...charts.filter(choice=>choice.strip),...additional]) {
         const tile = line('', 'article', 'live-tile');
         tile.dataset.symbol=choice.symbol;
-        const title=line('', 'div', 'live-title');title.append(line('','i'),line(choice.name,'span'));
+        const title=line('', 'button', 'live-title');title.type='button';title.append(line(choice.name,'span'));
         title.title=choice.detail;
+        title.setAttribute('aria-label','Afficher le graphique '+choice.name);
+        title.addEventListener('click',()=>{
+          const index=charts.findIndex(chart=>chart.symbol===choice.symbol);
+          if(index<0)return;
+          marketGroup=charts[index].group;setMarketMode('live');renderChart(index);
+          document.getElementById('market-chart-title').scrollIntoView({behavior:'smooth',block:'start'});
+        });
         const widget = line('Chargement du cours…', 'div', 'widget');
         const footer=line('','div','live-footer'),link=line('Instrument & horaire ↗','a');
-        if(choice.provider)footer.append(line('CFD · '+choice.provider+' · ','span'));
+        const unit=choice.detail.match(/(?:\$|€|USD|GBP|JPY)[^·;]*/)?.[0]?.trim();
+        footer.append(line((choice.provider?'CFD · '+choice.provider+' · ':'')+(unit?unit+' · ':''),'span'));
         link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';footer.append(link);
         tile.append(title,widget,footer);box.append(tile);
         embed(widget, 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js',
@@ -226,7 +248,8 @@
         const link=line('Ouvrir le graphique '+choice.name+' ↗','a','button');link.href=choice.url;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);
         if(choice.te){const link=line('Consulter Trading Economics ↗','a','button');link.href=choice.te;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
         if(choice.name==='TTF'){const button=line('Voir l’historique mensuel publié','button','button');button.type='button';button.addEventListener('click',()=>setMarketMode('history'));panel.append(button);}
-        const alternative={'Blé US':'Blé indicatif','Maïs US':'Maïs indicatif',Café:'Café indicatif',Cacao:'Cacao indicatif'}[choice.name];
+        const alternative={'Blé US':'Blé indicatif','Maïs US':'Maïs indicatif',Café:'Café indicatif',Cacao:'Cacao indicatif',
+          'Cuivre LME':'Cuivre indicatif','Aluminium LME':'Aluminium indicatif'}[choice.name];
         if(alternative){const button=line('Voir '+alternative+' dans le cockpit','button','button');button.type='button';button.addEventListener('click',()=>renderChart(charts.findIndex(c=>c.name===alternative)));panel.append(button,
           line('Alternative clairement identifiée : un cours dérivé indicatif, distinct de la référence officielle.','small'));}
         box.append(panel);return;
@@ -275,7 +298,7 @@
           card.append(line(number(last.value,2)+' €/MWh','div','gas-price-value'),
             line('Moyenne mensuelle · '+period(last.date.slice(0,7)),'small'),
             line('Repère Banque mondiale / BCE. Cours en séance non connecté.','p'));
-        }else{card.append(line('—','div','unavailable-price'),line('Flux de cotation sous licence non connecté','p'));}
+        }else{card.classList.add('gas-source-link');card.append(line('Accès source · cotation non connectée','p'));}
         const link=line('Source et définition ↗','a');link.href=href;link.target='_blank';link.rel='noopener noreferrer';
         card.append(link);gas.append(card);
       }
@@ -351,7 +374,7 @@
       const box = document.getElementById('takeaway-list');
       box.replaceChildren();
       const priority=selectedSector==='gas'?['gas_fr','gas_eu','lng_fr_sendout']:selectedSector==='agri'?['ag_world_wheat','ag_corn_stocks','ag_soy_stocks']:[];
-      const selected=metrics.filter(item=>item.sector===selectedSector&&Number.isFinite(item.change))
+      const selected=sectorItems().filter(item=>Number.isFinite(item.change))
         .sort((a,b)=>(priority.includes(a.id)?priority.indexOf(a.id):999)-(priority.includes(b.id)?priority.indexOf(b.id):999));
       for (const item of selected.slice(0, 3)) {
         const note = line('', 'div', 'story');
@@ -359,7 +382,7 @@
         note.append(line('Observation ' + item.source + ' · ' + period(item.as_of) + (stale(item) ? ' · archive' : ''), 'small'));
         box.append(note);
       }
-      if (!box.children.length) box.append(line('Aucune variation vérifiée pour cette catégorie.', 'p'));
+      document.getElementById('takeaways').hidden=!box.children.length;
     }
 
     const signalRules = {
@@ -380,7 +403,11 @@
     function renderSignals() {
       const box = document.getElementById('signals');
       box.replaceChildren();
-      const rules = signalRules[selectedSector] || [];
+      const rules = selectedSector==='agri'&&agriFocus!=='us' ?
+        (agriFocus==='fr'?[{id:'ag_fr_corn_harvest',label:'Maïs France · avancement',market:'MATIF maïs',rising:'Récolte en avance sur la moyenne : grain disponible plus tôt ; qualité et demande à confronter.',falling:'Récolte en retard sur la moyenne : surveiller météo et rythme des livraisons.'},
+          {id:'ag_fr_wheat_sown',label:'Blé France · semis',market:'MATIF blé',rising:'Semis en avance sur la moyenne cinq ans ; ce n’est pas une prévision de rendement.',falling:'Semis en retard sur la moyenne cinq ans ; surveiller les conditions de plantation.'}]:
+         agriFocus==='coffee'?[{id:'ag_coffee_br_production',label:'Café Brésil · offre prévue',market:'Café',rising:'Production prévue supérieure à la campagne précédente ; confronter stocks, consommation et météo.',falling:'Production prévue inférieure à la campagne précédente ; confronter stocks, consommation et météo.'}]:[])
+        :signalRules[selectedSector] || [];
       for (const rule of rules) {
         const item = byId[rule.id];
         if (!item) continue;
@@ -446,7 +473,7 @@
       const ticks=width<500?3:5;
       for(let i=0;i<ticks;i++){const t=start+(end-start)*i/(ticks-1);
         add('text',{x:x(t),y:240,'text-anchor':i===0?'start':i===ticks-1?'end':'middle'}).textContent=
-          new Intl.DateTimeFormat('fr-FR',{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(t));}
+          new Intl.DateTimeFormat('fr-FR',{month:'short',day:'numeric',...(config.intraday?{hour:'2-digit',minute:'2-digit'}:{}),timeZone:config.intraday?'Europe/Paris':'UTC'}).format(new Date(t));}
       for(const seriesItem of series){
         let part=[];const draw=()=>{if(part.length>1)add('polyline',{points:part.map(p=>x(Date.parse(p.date)).toFixed(2)+','+y(p.value).toFixed(2)).join(' '),stroke:seriesItem.color});
           else if(part.length)add('circle',{cx:x(Date.parse(part[0].date)),cy:y(part[0].value),r:2.5,fill:seriesItem.color});part=[];};
@@ -463,7 +490,7 @@
         readout.replaceChildren();
         for(const s of series){const p=s.points.reduce((a,p)=>Math.abs(Date.parse(p.date)-t)<(a?Math.abs(Date.parse(a.date)-t):Infinity)?p:a,null);
           if(!p)continue;const valid=Math.abs(Date.parse(p.date)-t)<=(config.maxGap||10)*86400000;
-          const cell=line(s.name+' · '+(valid?number(p.value,2)+' '+config.unit+' · '+period(p.date):'pas de mesure proche'),'span');cell.style.color=s.color;readout.append(cell);}
+          const cell=line(s.name+' · '+(valid?number(p.value,2)+' '+config.unit+' · '+(config.intraday?parisTime(p.date):period(p.date)):'pas de mesure proche'),'span');cell.style.color=s.color;readout.append(cell);}
       });
       overlay.addEventListener('pointerleave',()=>cursor.setAttribute('visibility','hidden'));
       host.append(svg,readout);
@@ -685,6 +712,13 @@
       const chart=line('','div');card.append(chart);
       timeChart(chart,{title,unit,series:[{name:'Brent',points:a},{name:'WTI',points:b}],maxGap:5});
       card.append(line(note,'p','detail'));
+      const spreadPanel=line('','details','spread-panel');spreadPanel.append(line('Écart Brent − WTI · spot EIA','summary'));
+      const wtiByDay=new Map(b.map(p=>[p.date,p.value]));
+      const spread=a.filter(p=>wtiByDay.has(p.date)).map(p=>({date:p.date,value:p.value-wtiByDay.get(p.date)}));
+      const spreadChart=line('','div');spreadPanel.append(spreadChart);
+      spreadPanel.addEventListener('toggle',()=>{if(spreadPanel.open)timeChart(spreadChart,{title:'Spread Brent − WTI · spot EIA',unit:'$/bbl',series:[{name:'Brent − WTI',points:spread}],digits:1,maxGap:5});});
+      spreadPanel.append(line('Différence des deux prix spot publiés pour le même jour. Produits et lieux de livraison distincts ; ce n’est pas un spread de futures.','p','detail'));
+      card.append(spreadPanel);
     }
 
     const metricNotes={
@@ -719,7 +753,7 @@
       for(const item of items){const row=line('','tr'),name=line('','td');name.append(line(item.label,'span'));
         const href=safeLink(item.url);if(href){const source=line(item.source+' ↗','a');source.href=href;source.target='_blank';source.rel='noopener noreferrer';const meta=line('','small');meta.append(source);name.append(meta);}
         const value=line('','td');value.append(line(number(item.value,digits(item))+' '+item.unit,'strong'));
-        const comparison=line('','td');comparison.append(line(changeText(item)||'Non publiée','span'),line(period(item.as_of)+(stale(item)?' · archive':''),'small'));
+        const comparison=line('','td');comparison.append(line(changeText(item)||'Non publiée','span'),line(period(item.as_of)+(stale(item)?' · archive':''),'small'),...(item.published_at?[line('Publié '+period(item.published_at),'small')]:[]));
         const note=line('','td');note.append(line(metricNotes[item.id]||item.detail||'Mesure datée, à rapprocher des autres facteurs.','span','metric-explanation'));
         if(item.detail && metricNotes[item.id])note.append(line(item.detail,'small'));
         row.append(name,value,comparison,note);body.append(row);}
@@ -728,13 +762,16 @@
     function renderSectorVisuals() {
       const host=document.getElementById('sector-visuals');host.replaceChildren();
       if(selectedSector==='agri'){
-        for(const [id,title] of [['ag_corn_harvest','Maïs US · rythme de récolte'],['ag_soy_harvest','Soja US · rythme de récolte']]){
+        const crops=agriFocus==='fr'?[['ag_fr_corn_harvest','Maïs France · rythme de récolte'],['ag_fr_wheat_sown','Blé France · semis']]:
+          agriFocus==='us'?[['ag_corn_harvest','Maïs US · rythme de récolte'],['ag_soy_harvest','Soja US · rythme de récolte']]:[];
+        for(const [id,title] of crops){
           const item=byId[id];if(!item)continue;const card=line('','section','card crop-panel');card.append(line(title,'h3'));
           const reference=Number.isFinite(item.change)?item.value-item.change:null;
           for(const [label,value,color] of [['Mesuré · '+period(item.as_of),item.value,false],['Moyenne cinq ans',reference,true]]){
             if(!Number.isFinite(value))continue;const bar=line('','div','crop-compare'),caption=line('','div','crop-label');caption.append(line(label,'span'),line(number(value,0)+' %','b'));
             const track=line('','div','crop-track'),fill=line('','i',color?'reference':'');fill.style.width=Math.max(0,Math.min(100,value))+'%';track.append(fill);bar.append(caption,track);card.append(bar);}
-          card.append(line('Échelle 0–100 % · USDA NASS'+(stale(item)?' · dernière archive':''),'small','chart-source'),line('Une récolte rapide peut accélérer l’arrivée de grain. La qualité finale et la météo restent à surveiller.','p'));host.append(card);
+          card.append(line('Échelle 0–100 % · '+item.source+(stale(item)?' · dernière archive':''),'small','chart-source'),
+            line(item.campaign?'Récolte '+item.campaign+' · '+item.detail:'Qualité finale et météo restent à surveiller.','p'));host.append(card);
         }
       } else if(selectedSector==='metals'){
         for(const [title,rows] of [['Cuivre · facteurs à confronter',[
@@ -760,17 +797,24 @@
 
     function renderSector() {
       document.getElementById('sector-heading').textContent = sectors[selectedSector];
+      const subfilters=document.getElementById('agri-filters');subfilters.hidden=selectedSector!=='agri';subfilters.replaceChildren();
+      if(selectedSector==='agri')for(const [focus,label] of [['us','Grains US'],['fr','Grains France'],['coffee','Café'],['cocoa','Cacao']]){
+        const button=line(label,'button');button.type='button';button.classList.toggle('active',focus===agriFocus);button.setAttribute('aria-pressed',String(focus===agriFocus));
+        button.addEventListener('click',()=>{agriFocus=focus;renderSector();});subfilters.append(button);
+      }
       const box = document.getElementById('metrics');
       box.replaceChildren();
       const preferred = selectedSector === 'oil' ? ['oil_crude','oil_cushing','oil_gasoline',
         'oil_refinery','oil_imports','oil_exports','oil_norway_liquids'] :
         selectedSector === 'gas' ? ['gas_fr','gas_fr_twh','gas_fr_net','lng_fr_sendout',
           'gas_eu','lng_fr_inventory','gas_us'] :
-        selectedSector === 'agri' ? ['ag_corn_condition','ag_corn_harvest','ag_soy_condition',
-          'ag_soy_harvest','ag_corn_stocks','ag_world_wheat','ag_soy_stocks'] :
+        selectedSector === 'agri' ? (agriFocus==='fr'?['ag_fr_corn_harvest','ag_fr_corn_condition','ag_fr_wheat_sown','ag_fr_wheat_harvest']:
+          agriFocus==='coffee'?['ag_coffee_br_production','ag_coffee_br_stocks','ag_coffee_vn_production','ag_coffee_vn_stocks']:
+          agriFocus==='cocoa'?['ag_cocoa_stocks','ag_cocoa_production','ag_cocoa_grindings']:
+          ['ag_corn_condition','ag_corn_harvest','ag_soy_condition','ag_soy_harvest','ag_corn_stocks','ag_world_wheat','ag_soy_stocks']) :
         ['metal_copper','metal_aluminum'];
       const order = new Map(preferred.map((id, index) => [id, index]));
-      const sorted = metrics.filter(metric => metric.sector === selectedSector)
+      const sorted = sectorItems()
         .sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
       const main=sorted.filter(item=>preferred.includes(item.id));
       if(main.length)box.append(metricsTable(main));
@@ -793,7 +837,10 @@
         agri: 'USDA WASDE mesure l’offre et la demande prévues : moins de stocks finaux tend à soutenir les prix, toutes choses égales par ailleurs. Suivre la météo et les cultures avant le prochain rapport : FranceAgriMer Céré’Obs (France) et USDA Crop Progress (US).',
         metals: 'La production minière annuelle décrit l’offre structurelle, pas la tension du jour. Pour interpréter le cuivre ou l’aluminium, rapprocher inventaires LME, production et demande industrielle ; aucune variation de prix immédiate ne se déduit du seul tonnage.'
       };
-      context.textContent = notes[selectedSector];
+      const agriNotes={fr:'FranceAgriMer Céré’Obs : semaine mesurée et publication distinctes. Semis et récoltes sont rapportés à leur campagne ; bonnes/très bonnes décrit l’état des surfaces, pas un prix MATIF.',
+        coffee:'USDA FAS PS&D : café vert toutes variétés, Brésil et Vietnam. Millions de sacs de 60 kg, prévisions de campagne révisables. Stocks finaux prévus distincts des inventaires livrables ICE.',
+        cocoa:'ICCO : faits du dernier communiqué public disponible, campagne indiquée dans chaque mesure. Stocks mondiaux estimés et broyages ; ce ne sont pas des inventaires ICE ni une mesure live.'};
+      context.textContent=selectedSector==='agri'&&agriFocus!=='us'?agriNotes[agriFocus]:notes[selectedSector];
       const references = selectedSector === 'agri' ? [
         ['FranceAgriMer · Céré’Obs ↗','https://cereobs.franceagrimer.fr/'],
         ['USDA · Crop Progress ↗','https://www.nass.usda.gov/Publications/National_Crop_Progress/'],
@@ -827,6 +874,16 @@
       ['ech_physiques', 'Échanges nets', row => row.ech_physiques]
     ];
 
+    function periodOptions(points,choices) {
+      const times=(points||[]).map(p=>Date.parse(p.at)).filter(Number.isFinite);
+      if(!times.length)return choices.slice(0,1);
+      const available=Math.max(1,Math.ceil((Math.max(...times)-Math.min(...times))/86400000));
+      const options=choices.filter(([days])=>days<=available);
+      if(!options.length)options.push(choices[0]);
+      if(available>choices[0][0]&&!options.some(([days])=>days===available))options.push([available,'Tout · '+available+' j']);
+      return options;
+    }
+
     function renderPowerHistory() {
       const chart = document.getElementById('power-history-chart');
       const meta = document.getElementById('power-history-meta');
@@ -834,7 +891,11 @@
       const span = document.getElementById('power-span');
       const series = document.getElementById('power-series');
       chart.replaceChildren(); span.replaceChildren(); series.replaceChildren();
-      for (const [days, label] of [[1,'24 h'],[7,'7 j'],[30,'30 j'],[365,'1 an']]) {
+      const historic = Array.isArray(powerHistory?.points) && powerHistory.points.length ?
+        powerHistory.points : snapshot.history?.power_fr || [];
+      const options=periodOptions(historic,[[1,'24 h'],[7,'7 j'],[30,'30 j'],[365,'1 an']]);
+      if(!options.some(([days])=>days===powerSpan))powerSpan=options.at(-1)[0];
+      for (const [days, label] of options) {
         const button = line(label, 'button'); button.type = 'button';
         button.setAttribute('aria-pressed', String(powerSpan === days));
         button.addEventListener('click', () => { powerSpan = days; renderPowerHistory(); });
@@ -846,8 +907,6 @@
         button.addEventListener('click', () => { powerMeasure = key; renderPowerHistory(); });
         series.append(button);
       }
-      const historic = Array.isArray(powerHistory?.points) && powerHistory.points.length ?
-        powerHistory.points : snapshot.history?.power_fr || [];
       const ordered = historic.filter(row => row && Number.isFinite(row.load) && Number.isFinite(Date.parse(row.at)))
         .sort((a,b) => Date.parse(a.at) - Date.parse(b.at));
       if (ordered.length < 3) {
@@ -985,7 +1044,9 @@
       licence.textContent = attribution && attribution === powerPrices.licence?.[powerCompareZone] ?
         'Licence et attribution déclarées pour France et '+compare.label+' : ' + attribution + '. ' :
         'Licence et attribution déclarées par la source : ' + (attribution || 'à vérifier') + '. ';
-      for (const [days,label] of [[2,'48 h'],[7,'7 j'],[30,'30 j'],[365,'1 an']]) {
+      const options=periodOptions(de.length?de:fr,[[2,'48 h'],[7,'7 j'],[30,'30 j'],[365,'1 an']]);
+      if(!options.some(([days])=>days===powerPriceSpan))powerPriceSpan=options.at(-1)[0];
+      for (const [days,label] of options) {
         const button = line(label,'button'); button.type='button';
         button.setAttribute('aria-pressed',String(powerPriceSpan===days));
         button.addEventListener('click',()=>{powerPriceSpan=days;renderPowerPrices();});
@@ -1099,6 +1160,14 @@
       add('text',{x:55,y:218}).textContent=parisTime(t0).replace(' · Paris','');
       add('text',{x:585,y:218}).textContent=parisTime(t1).replace(' · Paris','');
       chart.append(svg);
+      const spreadPanel=document.getElementById('power-spread-panel'),spreadHost=document.getElementById('power-spread-chart');
+      const comparisonByTime=new Map(d.map(p=>[Date.parse(p.at),p.value]));
+      const spread=f.filter(p=>comparisonByTime.has(Date.parse(p.at)))
+        .map(p=>({date:p.at,value:p.value-comparisonByTime.get(Date.parse(p.at))}));
+      spreadPanel.hidden=spread.length<2;
+      spreadPanel.querySelector('summary').textContent='Écart France − '+compare.label+' · mêmes livraisons';
+      const drawSpread=()=>{if(spreadPanel.open)timeChart(spreadHost,{title:'Spread day-ahead France − '+compare.label,unit:'€/MWh',series:[{name:'France − '+compare.label,points:spread}],digits:1,maxGap:interval*1.5/1440,intraday:true});};
+      spreadPanel.ontoggle=drawSpread;drawSpread();
       meta.textContent='France (vert) · '+compare.label+' (orange) · même échelle €/MWh · '+f.length+
         ' périodes France affichées · première donnée '+parisTime(fr[0].at)+
         ' · dernière livraison '+parisTime(fr[fr.length-1].at)+
@@ -1510,21 +1579,7 @@
             const prices = await priceResponse.json();
             if (prices.schema===1&&Array.isArray(prices.series?.fr)&&
                 Date.parse(prices.generated_at)>=Date.parse(powerPrices.generated_at||0)) {
-              const recent=powerPrices.live_checked_at&&
-                Date.parse(powerPrices.live_checked_at)>Date.parse(prices.generated_at);
-              if(recent){
-                const combine=(archive,live)=>{
-                  const byTime=new Map();
-                  for(const p of [...(archive||[]),...(live||[])]){
-                    const t=Date.parse(p.at);
-                    if(Number.isFinite(t)&&Number.isFinite(p.value))byTime.set(t,p);
-                  }
-                  return [...byTime.values()].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
-                };
-                powerPrices={...prices,series:{fr:combine(prices.series.fr,powerPrices.series?.fr),
-                  de:combine(prices.series.de,powerPrices.series?.de)},
-                  licence:powerPrices.licence,live_checked_at:powerPrices.live_checked_at};
-              } else powerPrices=prices;
+              powerPrices=window.CockpitPowerMetrics.mergePriceArchive(prices,powerPrices);
             }
           }
         } catch (error) { console.warn('Prix Power non synchronisés :', error); }

@@ -9,7 +9,7 @@ from scripts.update_data import (build_snapshot, parse_alsi, parse_eia_spot, par
                                  parse_oil_price_mirror, merge_power_history, parse_power_price,
                                  merge_power_prices,
                                  parse_power_daily, parse_ttf_ngp, parse_ttf_monthly,
-                                 parse_crop_progress, crop_progress_link, eex_ngp_enabled,
+                                 parse_crop_progress, crop_progress_link, fetch_crop_progress, eex_ngp_enabled,
                                  verified_calendar)
 
 
@@ -59,6 +59,36 @@ WASDE - 675 - 24
 
 
 class PublicationParsingTest(unittest.TestCase):
+    def test_wasde_uses_official_nal_archive_after_legacy_access_failure(self):
+        from scripts.update_data import fetch_wasde
+        from urllib.error import HTTPError
+        root='https://esmis.nal.usda.gov/publication/world-agricultural-supply-and-demand-estimates'
+        mirror='https://esmis.nal.usda.gov/sites/default/release-files/796054/wasde0926.txt'
+        def read(url):
+            if url.startswith('https://www.usda.gov/oce/'):
+                raise HTTPError(url,403,'blocked',None,None)
+            return b'<a href="/sites/default/release-files/796054/wasde0926.txt">txt</a>' if url==root else WASDE_SAMPLE
+        with patch('scripts.update_data.fetch',side_effect=read):
+            result=fetch_wasde(date(2026,9,29))
+        self.assertEqual(result['as_of'],'2026-09')
+        self.assertEqual(result['url'],mirror)
+
+    def test_crop_holiday_tuesday_is_checked_despite_stale_publication_index(self):
+        root='https://esmis.nal.usda.gov/publication/crop-progress'
+        old={'as_of':'2026-10-04','published':'2026-10-05','metrics':[]}
+        new={'as_of':'2026-10-11','published':'2026-10-13','metrics':[]}
+        def fetch_page(url):
+            if url in ('old','new'):return url.encode()
+            if url==root:return b'old'
+            if url.endswith('2026-10-13'):return b'new'
+            raise OSError('No release for this day')
+        with patch('scripts.update_data.fetch',side_effect=fetch_page) as fetched, \
+             patch('scripts.update_data.crop_progress_link',side_effect=lambda raw:raw.decode()), \
+             patch('scripts.update_data.parse_crop_progress',side_effect=lambda raw,url,today:new if raw==b'new' else old):
+            result=fetch_crop_progress(date(2026,10,14))
+        self.assertEqual(result['published'],'2026-10-13')
+        self.assertIn(root+'/2026-10-13',[call.args[0] for call in fetched.call_args_list])
+
     def test_crude_history_preserves_four_years_excludes_suppression_and_future(self):
         from scripts.update_data import parse_oil_history
         from datetime import timedelta
