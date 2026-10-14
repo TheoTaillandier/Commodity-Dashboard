@@ -51,7 +51,7 @@
           'agsi.gie.eu', 'alsi.gie.eu', 'fred.stlouisfed.org', 'www.sodir.no', 'www.eex.com',
           'www.ice.com', 'www.tradingview.com', 'transparency.entsog.eu', 'esmis.nal.usda.gov',
           'www.worldbank.org', 'www.energy-charts.info', 'api.energy-charts.info', 'data.ecb.europa.eu',
-          'www.fas.usda.gov','cereobs.franceagrimer.fr','www.icco.org'];
+          'www.fas.usda.gov','www.nass.usda.gov','cereobs.franceagrimer.fr','www.icco.org'];
         return parsed.protocol === 'https:' && hosts.includes(parsed.hostname) ? parsed.href : null;
       } catch { return null; }
     }
@@ -771,7 +771,7 @@
             if(!Number.isFinite(value))continue;const bar=line('','div','crop-compare'),caption=line('','div','crop-label');caption.append(line(label,'span'),line(number(value,0)+' %','b'));
             const track=line('','div','crop-track'),fill=line('','i',color?'reference':'');fill.style.width=Math.max(0,Math.min(100,value))+'%';track.append(fill);bar.append(caption,track);card.append(bar);}
           card.append(line('Échelle 0–100 % · '+item.source+(stale(item)?' · dernière archive':''),'small','chart-source'),
-            line(item.campaign?'Récolte '+item.campaign+' · '+item.detail:'Qualité finale et météo restent à surveiller.','p'));host.append(card);
+            line(item.campaign?item.detail:'Qualité finale et météo restent à surveiller.','p'));host.append(card);
         }
       } else if(selectedSector==='metals'){
         for(const [title,rows] of [['Cuivre · facteurs à confronter',[

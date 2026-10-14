@@ -80,6 +80,7 @@ const http=require('node:http');
             assert.equal(await page.locator('#oil-stock-seasonal .year-line').count(),4,'Four actual years of crude inventories');
             assert.ok(!(await page.locator('#oil-stock-seasonal .seasonal-comparisons').innerText()).includes('Non publié'),'Four weekly comparisons use the closest comparable week');
             await page.locator('#comparison-chart .spread-panel summary').click();
+            await page.locator('#comparison-chart .spread-panel svg').waitFor({state:'visible'});
             assert.equal(await page.locator('#comparison-chart .spread-panel svg').count(),1,'Brent/WTI spot spread is available');
           }
           if(sector==='agri'){
@@ -106,6 +107,7 @@ const http=require('node:http');
               assert.equal(await page.locator('#power-price-chart svg').count(),1);
             }
             await page.locator('#power-spread-panel summary').click();
+            await page.locator('#power-spread-chart svg').waitFor({state:'visible'});
             assert.equal(await page.locator('#power-spread-chart svg').count(),1,'Aligned delivery price spread is available');
             const positions=await page.evaluate(()=>['power-seasonal','power-grid','power-prices-panel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
             assert.ok(positions[0]<positions[1]&&positions[1]<positions[2],'Annual and physical balance are above European comparison');
