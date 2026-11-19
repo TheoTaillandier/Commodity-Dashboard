@@ -1,13 +1,6 @@
 {
   "calendar": [
     {
-      "at": "2026-11-18T15:30:00+00:00",
-      "context": "Brut, essence, distillats et raffineries US",
-      "day_only": false,
-      "title": "EIA · stocks pétroliers WPSR",
-      "url": "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
-    },
-    {
       "at": "2026-11-19T15:30:00+00:00",
       "context": "Variation et écart à la moyenne cinq ans",
       "day_only": false,
@@ -134,7 +127,7 @@
       "url": "https://ir.eia.gov/ngs/schedule.html"
     }
   ],
-  "generated_at": "2026-11-18T17:16:09+00:00",
+  "generated_at": "2026-11-19T00:23:19+00:00",
   "history": {
     "gas_eu": [
       {
@@ -5800,6 +5793,10 @@
       {
         "date": "2026-11-16",
         "value": 70.15
+      },
+      {
+        "date": "2026-11-17",
+        "value": 69.95
       }
     ],
     "gas_fr": [
@@ -11466,13 +11463,13 @@
       {
         "date": "2026-11-16",
         "value": 75.88
+      },
+      {
+        "date": "2026-11-17",
+        "value": 75.49
       }
     ],
     "lng_eu_sendout": [
-      {
-        "date": "2026-11-03",
-        "value": 3878.9
-      },
       {
         "date": "2026-11-04",
         "value": 3972.1
@@ -11524,13 +11521,13 @@
       {
         "date": "2026-11-16",
         "value": 4215.4
+      },
+      {
+        "date": "2026-11-17",
+        "value": 4013.7
       }
     ],
     "lng_fr_sendout": [
-      {
-        "date": "2026-11-03",
-        "value": 845.7
-      },
       {
         "date": "2026-11-04",
         "value": 648.1
@@ -11582,6 +11579,10 @@
       {
         "date": "2026-11-16",
         "value": 778.6
+      },
+      {
+        "date": "2026-11-17",
+        "value": 718.2
       }
     ],
     "oil_crude": [
@@ -20162,261 +20163,6 @@
     },
     "power_fr": [
       {
-        "at": "2026-11-17T16:15:00+00:00",
-        "bioenergies": 976,
-        "charbon": 0,
-        "ech_physiques": -14999,
-        "eolien": 19296,
-        "fioul": 36,
-        "gaz": 1417,
-        "hydraulique": 4975,
-        "load": 56466,
-        "nucleaire": 45073,
-        "pompage": -521,
-        "prevision_j": 56550,
-        "prevision_j1": 55550,
-        "solaire": 433,
-        "taux_co2": 15
-      },
-      {
-        "at": "2026-11-17T16:30:00+00:00",
-        "bioenergies": 975,
-        "charbon": 0,
-        "ech_physiques": -14861,
-        "eolien": 19270,
-        "fioul": 37,
-        "gaz": 1420,
-        "hydraulique": 5121,
-        "load": 56976,
-        "nucleaire": 45222,
-        "pompage": -519,
-        "prevision_j": 57000,
-        "prevision_j1": 55900,
-        "solaire": 313,
-        "taux_co2": 15
-      },
-      {
-        "at": "2026-11-17T16:45:00+00:00",
-        "bioenergies": 977,
-        "charbon": 0,
-        "ech_physiques": -14489,
-        "eolien": 19290,
-        "fioul": 37,
-        "gaz": 1423,
-        "hydraulique": 5337,
-        "load": 57559,
-        "nucleaire": 45302,
-        "pompage": -520,
-        "prevision_j": 57650,
-        "prevision_j1": 56950,
-        "solaire": 212,
-        "taux_co2": 15
-      },
-      {
-        "at": "2026-11-17T17:00:00+00:00",
-        "bioenergies": 977,
-        "charbon": 0,
-        "ech_physiques": -14214,
-        "eolien": 19143,
-        "fioul": 37,
-        "gaz": 1412,
-        "hydraulique": 5426,
-        "load": 57963,
-        "nucleaire": 45376,
-        "pompage": -520,
-        "prevision_j": 58300,
-        "prevision_j1": 58000,
-        "solaire": 196,
-        "taux_co2": 15
-      },
-      {
-        "at": "2026-11-17T17:15:00+00:00",
-        "bioenergies": 974,
-        "charbon": 0,
-        "ech_physiques": -13662,
-        "eolien": 19045,
-        "fioul": 37,
-        "gaz": 1274,
-        "hydraulique": 5815,
-        "load": 58561,
-        "nucleaire": 45384,
-        "pompage": -519,
-        "prevision_j": 59000,
-        "prevision_j1": 58400,
-        "solaire": 205,
-        "taux_co2": 15
-      },
-      {
-        "at": "2026-11-17T17:30:00+00:00",
-        "bioenergies": 975,
-        "charbon": 0,
-        "ech_physiques": -13429,
-        "eolien": 19360,
-        "fioul": 36,
-        "gaz": 1167,
-        "hydraulique": 6187,
-        "load": 59232,
-        "nucleaire": 45417,
-        "pompage": -519,
-        "prevision_j": 59700,
-        "prevision_j1": 58800,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T17:45:00+00:00",
-        "bioenergies": 976,
-        "charbon": 0,
-        "ech_physiques": -13267,
-        "eolien": 19313,
-        "fioul": 37,
-        "gaz": 1149,
-        "hydraulique": 6342,
-        "load": 59911,
-        "nucleaire": 45396,
-        "pompage": -196,
-        "prevision_j": 60600,
-        "prevision_j1": 59650,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T18:00:00+00:00",
-        "bioenergies": 974,
-        "charbon": 0,
-        "ech_physiques": -12912,
-        "eolien": 19249,
-        "fioul": 36,
-        "gaz": 1180,
-        "hydraulique": 6362,
-        "load": 60188,
-        "nucleaire": 45427,
-        "pompage": -355,
-        "prevision_j": 61500,
-        "prevision_j1": 60500,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T18:15:00+00:00",
-        "bioenergies": 973,
-        "charbon": 0,
-        "ech_physiques": -12789,
-        "eolien": 19495,
-        "fioul": 36,
-        "gaz": 1168,
-        "hydraulique": 6281,
-        "load": 60178,
-        "nucleaire": 45228,
-        "pompage": -356,
-        "prevision_j": 60850,
-        "prevision_j1": 59850,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T18:30:00+00:00",
-        "bioenergies": 976,
-        "charbon": 0,
-        "ech_physiques": -13301,
-        "eolien": 19419,
-        "fioul": 37,
-        "gaz": 1172,
-        "hydraulique": 6525,
-        "load": 59721,
-        "nucleaire": 45129,
-        "pompage": -355,
-        "prevision_j": 60200,
-        "prevision_j1": 59200,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T18:45:00+00:00",
-        "bioenergies": 972,
-        "charbon": 0,
-        "ech_physiques": -13806,
-        "eolien": 19285,
-        "fioul": 36,
-        "gaz": 1185,
-        "hydraulique": 6332,
-        "load": 58665,
-        "nucleaire": 44994,
-        "pompage": -355,
-        "prevision_j": 59300,
-        "prevision_j1": 58300,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T19:00:00+00:00",
-        "bioenergies": 969,
-        "charbon": 0,
-        "ech_physiques": -14196,
-        "eolien": 19258,
-        "fioul": 37,
-        "gaz": 1188,
-        "hydraulique": 6367,
-        "load": 58125,
-        "nucleaire": 44826,
-        "pompage": -356,
-        "prevision_j": 58400,
-        "prevision_j1": 57400,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T19:15:00+00:00",
-        "bioenergies": 969,
-        "charbon": 0,
-        "ech_physiques": -15561,
-        "eolien": 19210,
-        "fioul": 36,
-        "gaz": 1173,
-        "hydraulique": 6584,
-        "load": 56908,
-        "nucleaire": 44707,
-        "pompage": -354,
-        "prevision_j": 57450,
-        "prevision_j1": 56500,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T19:30:00+00:00",
-        "bioenergies": 974,
-        "charbon": 0,
-        "ech_physiques": -16220,
-        "eolien": 19093,
-        "fioul": 36,
-        "gaz": 1158,
-        "hydraulique": 6499,
-        "load": 56034,
-        "nucleaire": 44781,
-        "pompage": -355,
-        "prevision_j": 56500,
-        "prevision_j1": 55600,
-        "solaire": 0,
-        "taux_co2": 14
-      },
-      {
-        "at": "2026-11-17T19:45:00+00:00",
-        "bioenergies": 972,
-        "charbon": 0,
-        "ech_physiques": -16591,
-        "eolien": 19179,
-        "fioul": 37,
-        "gaz": 1040,
-        "hydraulique": 5649,
-        "load": 54912,
-        "nucleaire": 44965,
-        "pompage": -354,
-        "prevision_j": 55450,
-        "prevision_j1": 54550,
-        "solaire": 0,
-        "taux_co2": 13
-      },
-      {
         "at": "2026-11-17T20:00:00+00:00",
         "bioenergies": 972,
         "charbon": 0,
@@ -21791,6 +21537,261 @@
         "prevision_j": 54400,
         "prevision_j1": 56200,
         "solaire": 802,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T16:15:00+00:00",
+        "bioenergies": 980,
+        "charbon": 0,
+        "ech_physiques": -13823,
+        "eolien": 14922,
+        "fioul": 41,
+        "gaz": 1214,
+        "hydraulique": 6967,
+        "load": 54911,
+        "nucleaire": 44178,
+        "pompage": -35,
+        "prevision_j": 55200,
+        "prevision_j1": 56850,
+        "solaire": 492,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T16:30:00+00:00",
+        "bioenergies": 970,
+        "charbon": 0,
+        "ech_physiques": -13650,
+        "eolien": 15085,
+        "fioul": 41,
+        "gaz": 1214,
+        "hydraulique": 7747,
+        "load": 55935,
+        "nucleaire": 44260,
+        "pompage": 0,
+        "prevision_j": 56000,
+        "prevision_j1": 57500,
+        "solaire": 283,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T16:45:00+00:00",
+        "bioenergies": 968,
+        "charbon": 0,
+        "ech_physiques": -13370,
+        "eolien": 14891,
+        "fioul": 41,
+        "gaz": 1227,
+        "hydraulique": 8484,
+        "load": 56734,
+        "nucleaire": 44307,
+        "pompage": -1,
+        "prevision_j": 56950,
+        "prevision_j1": 58450,
+        "solaire": 201,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T17:00:00+00:00",
+        "bioenergies": 963,
+        "charbon": 0,
+        "ech_physiques": -12762,
+        "eolien": 14857,
+        "fioul": 41,
+        "gaz": 1172,
+        "hydraulique": 8879,
+        "load": 57665,
+        "nucleaire": 44333,
+        "pompage": 0,
+        "prevision_j": 57900,
+        "prevision_j1": 59400,
+        "solaire": 192,
+        "taux_co2": 14
+      },
+      {
+        "at": "2026-11-18T17:15:00+00:00",
+        "bioenergies": 971,
+        "charbon": 0,
+        "ech_physiques": -12653,
+        "eolien": 14803,
+        "fioul": 41,
+        "gaz": 1205,
+        "hydraulique": 9442,
+        "load": 58636,
+        "nucleaire": 44380,
+        "pompage": 0,
+        "prevision_j": 58550,
+        "prevision_j1": 60100,
+        "solaire": 198,
+        "taux_co2": 14
+      },
+      {
+        "at": "2026-11-18T17:30:00+00:00",
+        "bioenergies": 964,
+        "charbon": 0,
+        "ech_physiques": -11870,
+        "eolien": 14457,
+        "fioul": 41,
+        "gaz": 1214,
+        "hydraulique": 9697,
+        "load": 59285,
+        "nucleaire": 44422,
+        "pompage": 0,
+        "prevision_j": 59200,
+        "prevision_j1": 60800,
+        "solaire": 0,
+        "taux_co2": 14
+      },
+      {
+        "at": "2026-11-18T17:45:00+00:00",
+        "bioenergies": 974,
+        "charbon": 0,
+        "ech_physiques": -11442,
+        "eolien": 14185,
+        "fioul": 41,
+        "gaz": 1295,
+        "hydraulique": 10186,
+        "load": 59984,
+        "nucleaire": 44402,
+        "pompage": 0,
+        "prevision_j": 59800,
+        "prevision_j1": 61400,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T18:00:00+00:00",
+        "bioenergies": 974,
+        "charbon": 0,
+        "ech_physiques": -11011,
+        "eolien": 13456,
+        "fioul": 41,
+        "gaz": 1317,
+        "hydraulique": 10369,
+        "load": 59943,
+        "nucleaire": 44434,
+        "pompage": 0,
+        "prevision_j": 60400,
+        "prevision_j1": 62000,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T18:15:00+00:00",
+        "bioenergies": 976,
+        "charbon": 0,
+        "ech_physiques": -11110,
+        "eolien": 13573,
+        "fioul": 41,
+        "gaz": 1274,
+        "hydraulique": 10655,
+        "load": 60088,
+        "nucleaire": 44503,
+        "pompage": 0,
+        "prevision_j": 60000,
+        "prevision_j1": 61450,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T18:30:00+00:00",
+        "bioenergies": 973,
+        "charbon": 0,
+        "ech_physiques": -11828,
+        "eolien": 13366,
+        "fioul": 41,
+        "gaz": 1285,
+        "hydraulique": 10621,
+        "load": 59189,
+        "nucleaire": 44556,
+        "pompage": 0,
+        "prevision_j": 59600,
+        "prevision_j1": 60900,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T18:45:00+00:00",
+        "bioenergies": 972,
+        "charbon": 0,
+        "ech_physiques": -11608,
+        "eolien": 13256,
+        "fioul": 41,
+        "gaz": 1277,
+        "hydraulique": 10151,
+        "load": 58801,
+        "nucleaire": 44537,
+        "pompage": 0,
+        "prevision_j": 58650,
+        "prevision_j1": 59850,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T19:00:00+00:00",
+        "bioenergies": 976,
+        "charbon": 0,
+        "ech_physiques": -12167,
+        "eolien": 13228,
+        "fioul": 41,
+        "gaz": 1319,
+        "hydraulique": 9831,
+        "load": 57988,
+        "nucleaire": 44587,
+        "pompage": -1,
+        "prevision_j": 57700,
+        "prevision_j1": 58800,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T19:15:00+00:00",
+        "bioenergies": 975,
+        "charbon": 0,
+        "ech_physiques": -13296,
+        "eolien": 13564,
+        "fioul": 41,
+        "gaz": 1258,
+        "hydraulique": 9533,
+        "load": 56700,
+        "nucleaire": 44602,
+        "pompage": 0,
+        "prevision_j": 56750,
+        "prevision_j1": 57700,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T19:30:00+00:00",
+        "bioenergies": 976,
+        "charbon": 0,
+        "ech_physiques": -13242,
+        "eolien": 14136,
+        "fioul": 41,
+        "gaz": 1262,
+        "hydraulique": 8612,
+        "load": 56068,
+        "nucleaire": 44584,
+        "pompage": -1,
+        "prevision_j": 55800,
+        "prevision_j1": 56600,
+        "solaire": 0,
+        "taux_co2": 15
+      },
+      {
+        "at": "2026-11-18T19:45:00+00:00",
+        "bioenergies": 978,
+        "charbon": 0,
+        "ech_physiques": -13680,
+        "eolien": 14513,
+        "fioul": 40,
+        "gaz": 1285,
+        "hydraulique": 7889,
+        "load": 55292,
+        "nucleaire": 44602,
+        "pompage": -159,
+        "prevision_j": 55050,
+        "prevision_j1": 55700,
+        "solaire": 0,
         "taux_co2": 15
       }
     ],
@@ -27466,6 +27467,10 @@
       {
         "date": "2026-11-18",
         "value": 64.24
+      },
+      {
+        "date": "2026-11-19",
+        "value": 60.35
       }
     ],
     "ttf_monthly": [
@@ -28113,8 +28118,8 @@
       "value": 107.89
     },
     {
-      "as_of": "2026-11-11",
-      "change": 0.0,
+      "as_of": "2026-11-17",
+      "change": -0.1,
       "comparison": "vs séance précédente",
       "detail": "Clôture quotidienne publiée avec retard ; pas un future",
       "id": "price_henry",
@@ -28123,104 +28128,104 @@
       "source": "EIA · prix spot",
       "unit": "$/MMBtu",
       "url": "https://www.eia.gov/dnav/ng/NG_PRI_FUT_S1_D.htm",
-      "value": 3.0
+      "value": 3.1
     },
     {
       "as_of": "2026-11-18",
-      "change": -168,
+      "change": -3509,
       "comparison": "vs ~1 h",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_load",
       "label": "Demande France",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 54621
+      "value": 55292
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "export si négatif · import si positif",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_exchange",
       "label": "Solde des échanges physiques",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": -13475
+      "value": -13680
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_nucleaire",
       "label": "Nucléaire",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 44081
+      "value": 44602
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_gaz",
       "label": "Gaz électrique",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 1139
+      "value": 1285
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_eolien",
       "label": "Éolien",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 14661
+      "value": 14513
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_solaire",
       "label": "Solaire",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 802
+      "value": 0
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_hydraulique",
       "label": "Hydraulique",
       "sector": "power",
       "source": "RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 6775
+      "value": 7889
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production observée",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_bioenergies",
       "label": "Bioénergies",
       "sector": "power",
@@ -28233,20 +28238,20 @@
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "demande − éolien − solaire",
-      "detail": "Calcul indicatif, sans jugement sur le prix ni l'appel au gaz. Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Calcul indicatif, sans jugement sur le prix ni l'appel au gaz. Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_residual",
       "label": "Demande résiduelle indicative",
       "sector": "power",
       "source": "Calcul sur RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 39158
+      "value": 40779
     },
     {
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "production française",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_carbon",
       "label": "Intensité CO₂ estimée",
       "sector": "power",
@@ -28259,18 +28264,18 @@
       "as_of": "2026-11-18",
       "change": null,
       "comparison": "réalisé − prévision réactualisée le jour même",
-      "detail": "Observation 2026-11-18T16:00:00+00:00 UTC",
+      "detail": "Observation 2026-11-18T19:45:00+00:00 UTC",
       "id": "power_load_gap",
       "label": "Écart à prévision de demande J",
       "sector": "power",
       "source": "Calcul sur RTE éCO2mix",
       "unit": "MW",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/",
-      "value": 221
+      "value": 242
     },
     {
-      "as_of": "2026-11-16",
-      "change": -0.24,
+      "as_of": "2026-11-17",
+      "change": -0.2,
       "comparison": "points vs veille",
       "detail": "Estimé par les opérateurs",
       "id": "gas_eu",
@@ -28279,11 +28284,11 @@
       "source": "GIE AGSI+",
       "unit": "%",
       "url": "https://agsi.gie.eu/",
-      "value": 70.15
+      "value": 69.95
     },
     {
-      "as_of": "2026-11-16",
-      "change": -2.718,
+      "as_of": "2026-11-17",
+      "change": -2.254,
       "comparison": "vs veille",
       "detail": "Estimé par les opérateurs",
       "id": "gas_eu_twh",
@@ -28292,10 +28297,10 @@
       "source": "GIE AGSI+",
       "unit": "TWh",
       "url": "https://agsi.gie.eu/",
-      "value": 794.336
+      "value": 792.082
     },
     {
-      "as_of": "2026-11-16",
+      "as_of": "2026-11-17",
       "change": null,
       "comparison": "positif = soutirage ; négatif = injection",
       "detail": "Estimé par les opérateurs",
@@ -28305,11 +28310,11 @@
       "source": "GIE AGSI+",
       "unit": "GWh/j",
       "url": "https://agsi.gie.eu/",
-      "value": 2744.6
+      "value": 2253.2
     },
     {
-      "as_of": "2026-11-16",
-      "change": -0.57,
+      "as_of": "2026-11-17",
+      "change": -0.39,
       "comparison": "points vs veille",
       "detail": "Déclaré par les opérateurs",
       "id": "gas_fr",
@@ -28318,11 +28323,11 @@
       "source": "GIE AGSI+",
       "unit": "%",
       "url": "https://agsi.gie.eu/",
-      "value": 75.88
+      "value": 75.49
     },
     {
-      "as_of": "2026-11-16",
-      "change": -0.701,
+      "as_of": "2026-11-17",
+      "change": -0.488,
       "comparison": "vs veille",
       "detail": "Déclaré par les opérateurs",
       "id": "gas_fr_twh",
@@ -28331,10 +28336,10 @@
       "source": "GIE AGSI+",
       "unit": "TWh",
       "url": "https://agsi.gie.eu/",
-      "value": 94.003
+      "value": 93.516
     },
     {
-      "as_of": "2026-11-16",
+      "as_of": "2026-11-17",
       "change": null,
       "comparison": "positif = soutirage ; négatif = injection",
       "detail": "Déclaré par les opérateurs",
@@ -28344,11 +28349,11 @@
       "source": "GIE AGSI+",
       "unit": "GWh/j",
       "url": "https://agsi.gie.eu/",
-      "value": 700.8
+      "value": 487.6
     },
     {
-      "as_of": "2026-11-16",
-      "change": 12.59,
+      "as_of": "2026-11-17",
+      "change": 131.52,
       "comparison": "vs veille",
       "detail": "Estimé par les opérateurs",
       "id": "lng_eu_inventory",
@@ -28357,11 +28362,11 @@
       "source": "GIE ALSI",
       "unit": "10³ m³ GNL",
       "url": "https://alsi.gie.eu/",
-      "value": 5200.06
+      "value": 5331.58
     },
     {
-      "as_of": "2026-11-16",
-      "change": 442.8,
+      "as_of": "2026-11-17",
+      "change": -201.7,
       "comparison": "vs veille",
       "detail": "Estimé par les opérateurs",
       "id": "lng_eu_sendout",
@@ -28370,11 +28375,11 @@
       "source": "GIE ALSI",
       "unit": "GWh/j",
       "url": "https://alsi.gie.eu/",
-      "value": 4215.4
+      "value": 4013.7
     },
     {
-      "as_of": "2026-11-16",
-      "change": -4.4,
+      "as_of": "2026-11-17",
+      "change": -43.37,
       "comparison": "vs veille",
       "detail": "Déclaré par les opérateurs",
       "id": "lng_fr_inventory",
@@ -28383,11 +28388,11 @@
       "source": "GIE ALSI",
       "unit": "10³ m³ GNL",
       "url": "https://alsi.gie.eu/",
-      "value": 773.97
+      "value": 730.6
     },
     {
-      "as_of": "2026-11-16",
-      "change": 106.2,
+      "as_of": "2026-11-17",
+      "change": -60.4,
       "comparison": "vs veille",
       "detail": "Déclaré par les opérateurs",
       "id": "lng_fr_sendout",
@@ -28396,20 +28401,20 @@
       "source": "GIE ALSI",
       "unit": "GWh/j",
       "url": "https://alsi.gie.eu/",
-      "value": 778.6
+      "value": 718.2
     },
     {
-      "as_of": "2026-11-18",
+      "as_of": "2026-11-19",
       "change": null,
       "comparison": "prévision J-1, 24 h glissantes",
-      "detail": "Pic prévu à 2026-11-18T18:00:00+00:00 UTC",
+      "detail": "Pic prévu à 2026-11-19T18:00:00+00:00 UTC",
       "id": "power_forecast_fr",
       "label": "Pic prévu 24 h · France",
       "sector": "power",
       "source": "ENTSO-E · prévision J-1",
       "unit": "MW",
       "url": "https://transparency.entsoe.eu/",
-      "value": 61643
+      "value": 61600
     },
     {
       "as_of": "2026-11-19",
@@ -28646,27 +28651,27 @@
   "schema": 3,
   "sources": {
     "alsi": {
-      "as_of": "2026-11-16",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-17",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://alsi.gie.eu/"
     },
     "alsi_fr": {
-      "as_of": "2026-11-16",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-17",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://alsi.gie.eu/"
     },
     "brent": {
       "as_of": "2026-10-20",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "message": "Dernière donnée conservée ; source indisponible.",
       "status": "error",
       "url": "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm"
     },
     "cereobs": {
       "as_of": "2026-11-09",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "FranceAgriMer : reproduction avec mention de la source",
       "provenance": "Céré’Obs · tableaux nationaux publiés, attribution conservée",
       "published": "2026-11-13",
@@ -28675,7 +28680,7 @@
     },
     "cocoa": {
       "as_of": "2026-08-31",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "provenance": "ICCO · trois faits du communiqué public ; bulletin payant non téléchargé",
       "published": "2026-08-31",
       "status": "ok",
@@ -28683,7 +28688,7 @@
     },
     "coffee": {
       "as_of": "2026-07",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "USDA FAS · données publiques, attribution conservée",
       "provenance": "USDA FAS PS&D · fichier public café · données de campagne",
       "status": "ok",
@@ -28691,44 +28696,44 @@
     },
     "crop_progress": {
       "as_of": "2026-11-15",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "published": "2026-11-16",
       "status": "ok",
       "url": "https://esmis.nal.usda.gov/sites/default/release-files/796149/prog4626.txt"
     },
     "entsoe_de": {
       "as_of": "2026-11-19T10:45:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://transparency.entsoe.eu/"
     },
     "entsoe_fr": {
-      "as_of": "2026-11-18T18:00:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-19T18:00:00+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://transparency.entsoe.eu/"
     },
     "gas": {
       "as_of": "2026-11-06",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://ir.eia.gov/ngs/ngs.html"
     },
     "gie": {
-      "as_of": "2026-11-16",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-17",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://agsi.gie.eu/"
     },
     "gie_fr": {
-      "as_of": "2026-11-16",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-17",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://agsi.gie.eu/"
     },
     "henry": {
-      "as_of": "2026-11-11",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-17",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/dnav/ng/NG_PRI_FUT_S1_D.htm"
     },
@@ -28739,7 +28744,7 @@
     },
     "news": {
       "as_of": "2026-11-18",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/rss/todayinenergy.xml"
     },
@@ -28751,33 +28756,33 @@
     },
     "oil": {
       "as_of": "2026-11-13",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_flows": {
       "as_of": "2026-11-13",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_history": {
       "as_of": "2026-11-13",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "published": "2026-11-18",
       "status": "ok",
       "url": "https://www.eia.gov/petroleum/supply/weekly/"
     },
     "oil_price_history": {
       "as_of": "2026-11-11",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "provenance": "EIA · miroir datasets/oil-prices",
       "status": "ok",
       "url": "https://github.com/datasets/oil-prices"
     },
     "power_price_be": {
       "as_of": "2026-11-19T22:45:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
@@ -28785,7 +28790,7 @@
     },
     "power_price_de": {
       "as_of": "2026-11-19T22:45:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
@@ -28793,7 +28798,7 @@
     },
     "power_price_fr": {
       "as_of": "2026-11-19T22:45:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
@@ -28801,49 +28806,49 @@
     },
     "power_price_it_north": {
       "as_of": "2026-11-19T22:45:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Fraunhofer ISE Energy-Charts · day-ahead",
       "status": "ok",
       "url": "https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=IT"
     },
     "power_seasonal": {
-      "as_of": "2026-11-18",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-19",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de",
       "provenance": "Moyenne quotidienne pondérée par durée · Fraunhofer / SMARD",
       "status": "ok",
       "url": "https://www.energy-charts.info/charts/price_spot_market/chart.htm?c=FR"
     },
     "rte_power": {
-      "as_of": "2026-11-18T16:00:00+00:00",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "as_of": "2026-11-18T19:45:00+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://opendata.reseaux-energies.fr/explore/dataset/eco2mix-national-tr/"
     },
     "ttf_monthly": {
       "as_of": "2026-10",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "licence": "Banque mondiale · conditions des jeux de données ; attribution BCE pour le change",
       "provenance": "TTF · moyenne mensuelle Banque mondiale · conversion BCE EUR/MWh",
       "status": "ok",
       "url": "https://www.worldbank.org/en/research/commodity-markets"
     },
     "ttf_ngp": {
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "message": "Cours spot sous licence non connecté ; aucun cours de substitution.",
       "status": "needs_licence",
       "url": "https://www.eex.com/en/market-data/licensing-policies"
     },
     "wasde": {
       "as_of": "2026-11",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "status": "ok",
       "url": "https://www.usda.gov/oce/commodity/wasde/wasde1126.txt"
     },
     "wti": {
       "as_of": "2026-10-20",
-      "checked_at": "2026-11-18T17:16:09+00:00",
+      "checked_at": "2026-11-19T00:23:19+00:00",
       "message": "Dernière donnée conservée ; source indisponible.",
       "status": "error",
       "url": "https://www.eia.gov/dnav/pet/pet_pri_spt_s1_d.htm"
